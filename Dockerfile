@@ -15,7 +15,7 @@ ARG BUILD_COMMIT=0000000
 ENV BUILD_VERSION=${BUILD_VERSION} BUILD_COMMIT=${BUILD_COMMIT}
 RUN npm run build
 
-FROM golang:1.27.2-alpine@sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d AS server
+FROM golang:1.27.3-alpine@sha256:d200d2dd76b03a99b52651fd1325aff7dcd35422c35c01bac56571b0507f3deb AS server
 WORKDIR /src
 COPY server/go.mod ./
 COPY server/*.go ./
