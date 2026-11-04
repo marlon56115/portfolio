@@ -2,7 +2,7 @@
 # Imagen final: un binario estático de Go con el sitio embebido, sobre distroless (sin shell ni paquetes).
 # Imágenes base fijadas por digest.
 
-FROM node:24.11.1-alpine3.22@sha256:2867d550cf9d8bb50059a0fff528741f11a84d985c732e60e19e8e75c7239c43 AS site
+FROM node:26.3.0-alpine3.22@sha256:c7932b9e5e337b0e733d6e16abc1b0e104759e8b05e59ed56586cce967d26dfe AS site
 WORKDIR /app
 ENV ASTRO_TELEMETRY_DISABLED=1
 COPY package.json package-lock.json ./
