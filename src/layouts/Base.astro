@@ -41,8 +41,11 @@ const ogImage = `${site}/og.png`;
     <script is:inline src="/theme-init.js"></script>
   </head>
   <body>
+    <!-- Cloudflare no reescribe correos dentro de email_off: su decodificador usaría innerHTML y la CSP lo bloquea. -->
+    <Fragment set:html="<!--email_off-->" />
     <a class="skip" href="#main">{t.ui.skip}</a>
     <slot />
+    <Fragment set:html="<!--/email_off-->" />
   </body>
 </html>
 
