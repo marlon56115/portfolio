@@ -1,0 +1,10 @@
+node_modules
+dist
+.astro
+server/public
+.git
+.github
+chart
+.claude
+*.md
+Dockerfile

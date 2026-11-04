@@ -1,0 +1,64 @@
+---
+import '../styles/global.css';
+import type { Lang } from '../i18n/content';
+import { dict } from '../i18n/content';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = dict[lang];
+const site = Astro.site?.toString().replace(/\/$/, '') ?? '';
+const canonical = `${site}/${lang}/`;
+const ogImage = `${site}/og.png`;
+---
+
+<!doctype html>
+<html lang={t.htmlLang} data-lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{t.meta.title}</title>
+    <meta name="description" content={t.meta.description} />
+    <meta name="author" content={t.fullName} />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f3f1ec" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0e1013" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <link rel="canonical" href={canonical} />
+    <link rel="alternate" hreflang="es" href={`${site}/es/`} />
+    <link rel="alternate" hreflang="en" href={`${site}/en/`} />
+    <link rel="alternate" hreflang="x-default" href={`${site}/en/`} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="profile" />
+    <meta property="og:title" content={t.meta.title} />
+    <meta property="og:description" content={t.meta.description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:locale" content={lang === 'es' ? 'es_SV' : 'en_US'} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <!-- Tema antes de pintar, para evitar el destello. Archivo externo: la CSP no permite scripts inline. -->
+    <script is:inline src="/theme-init.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">{t.ui.skip}</a>
+    <slot />
+  </body>
+</html>
+
+<style>
+  .skip {
+    position: absolute;
+    left: 12px;
+    top: -60px;
+    z-index: 100;
+    padding: 8px 12px;
+    background: var(--ink);
+    color: var(--bg);
+    border-radius: var(--radius);
+    font-size: 14px;
+  }
+  .skip:focus {
+    top: 12px;
+  }
+</style>

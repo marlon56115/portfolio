@@ -1,0 +1,139 @@
+---
+import type { Lang } from '../i18n/content';
+import { dict } from '../i18n/content';
+
+interface Props {
+  lang: Lang;
+  version: string;
+  commit: string;
+}
+const { lang, version, commit } = Astro.props;
+const t = dict[lang];
+const c = t.contact;
+---
+
+<section class="section contact" id="contact">
+  <div class="wrap">
+    <header class="section-head" data-reveal>
+      <p class="section-index"><b>05</b> / {c.label}</p>
+      <div>
+        <h2 class="section-title big">{c.title}</h2>
+        <p class="section-lead">{c.lead}</p>
+      </div>
+    </header>
+
+    <div class="links" data-reveal>
+      <div class="link-row">
+        <span class="lk mono">{c.email}</span>
+        <a class="lv" href={`mailto:${t.email}`}>{t.email}</a>
+        <button class="copy mono" type="button" data-copy={t.email} data-copied={t.ui.copied} aria-label={t.ui.copyEmail} data-js-only>
+          copy
+        </button>
+      </div>
+      <div class="link-row">
+        <span class="lk mono">{c.linkedin}</span>
+        <a class="lv" href={t.linkedin} rel="noopener noreferrer" target="_blank">in/marlonguerradev <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="link-row">
+        <span class="lk mono">{c.github}</span>
+        <a class="lv" href={t.github} rel="noopener noreferrer" target="_blank">marlon56115 <span aria-hidden="true">↗</span></a>
+      </div>
+      <p class="refs">{c.refs}</p>
+    </div>
+  </div>
+</section>
+
+<footer class="ftr">
+  <div class="wrap ftr-in mono">
+    <p>© {new Date().getFullYear()} {t.fullName}</p>
+    <p class="ftr-mid">{t.footer.built}</p>
+    <p class="ftr-build">
+      <span class="led is-pulse" data-footer-led></span>
+      v{version} · <a href={`https://github.com/marlon56115/portfolio/commit/${commit}`} rel="noopener noreferrer" target="_blank">{commit.slice(0, 7)}</a>
+      · <a href="https://github.com/marlon56115/portfolio" rel="noopener noreferrer" target="_blank">{t.footer.source}</a>
+    </p>
+  </div>
+</footer>
+
+<style>
+  .big {
+    font-size: clamp(36px, 6vw, 64px);
+  }
+  .links {
+    max-width: 880px;
+    margin-left: auto;
+    border-top: 1px solid var(--line);
+  }
+  .link-row {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .lk {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: lowercase;
+  }
+  .lv {
+    font-size: clamp(18px, 2.6vw, 24px);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+  .lv:hover {
+    color: var(--accent-ink);
+  }
+  .copy {
+    height: 30px;
+    padding: 0 10px;
+    font-size: 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .copy:hover {
+    color: var(--ink);
+    border-color: var(--accent);
+  }
+  .refs {
+    margin-top: 18px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .ftr {
+    border-top: 1px solid var(--line);
+    padding: 28px 0 36px;
+  }
+  .ftr-in {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px 24px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .ftr-build {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .ftr a {
+    color: var(--ink-2);
+  }
+  @media (max-width: 620px) {
+    .link-row {
+      grid-template-columns: 1fr auto;
+      gap: 4px 12px;
+    }
+    .lk {
+      grid-column: 1 / -1;
+    }
+  }
+</style>

@@ -1,0 +1,104 @@
+name: Release
+
+# Al empujar un tag vX.Y.Z: CI completo, imagen en GHCR (X.Y.Z y sha-<corto>, nunca latest) y,
+# si existe el secret HOME_SERVER_TOKEN, PR en home-server que sube la versión y lo fusiona.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/marlon56115/portfolio
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  image:
+    name: Build and push image
+    needs: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Version from tag
+        id: v
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          echo "$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$' || { echo "::error::bad tag $GITHUB_REF_NAME"; exit 1; }
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ env.IMAGE }}
+          flavor: |
+            latest=false
+          tags: |
+            type=semver,pattern={{version}}
+            type=sha,format=short
+      - id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          provenance: mode=max
+          sbom: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            BUILD_VERSION=${{ steps.v.outputs.version }}
+            BUILD_COMMIT=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  bump-home-server:
+    name: Bump version in home-server
+    needs: image
+    if: ${{ !contains(github.ref_name, '-rc') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open and merge the version PR
+        env:
+          GH_TOKEN: ${{ secrets.HOME_SERVER_TOKEN }}
+          VERSION: ${{ needs.image.outputs.version }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "::warning::HOME_SERVER_TOKEN not set: bump k8s/apps/portfolio/source.yaml by hand"; exit 0
+          fi
+          FILE=k8s/apps/portfolio/source.yaml
+          BRANCH="bump/portfolio-${VERSION}"
+          git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/marlon56115/home-server.git" hs
+          cd hs
+          sed -i -E "s|^(    tag: )v[0-9][^ ]*( # debe coincidir.*)$|\1v${VERSION}\2|" "$FILE"
+          sed -i -E "s|^(      tag: )\"[^\"]+\"( # versión desplegada.*)$|\1\"${VERSION}\"\2|" "$FILE"
+          sed -i -E "s|\(([0-9]+\.[0-9]+\.[0-9]+)\) del HelmRelease|(${VERSION}) del HelmRelease|" "$FILE"
+          if git diff --quiet; then echo "nothing to bump"; exit 0; fi
+          git config user.name "portfolio-release[bot]"
+          git config user.email "portfolio-release@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git commit -am "chore(portfolio): desplegar v${VERSION}"
+          git push origin "$BRANCH"
+          gh pr create --repo marlon56115/home-server --head "$BRANCH" --base main \
+            --title "chore(portfolio): desplegar v${VERSION}" \
+            --body "PR automático del release de [portfolio v${VERSION}](https://github.com/marlon56115/portfolio/releases/tag/v${VERSION}). Sube \`ref.tag\` y \`values.image.tag\` juntos."
+          gh pr merge --repo marlon56115/home-server "$BRANCH" --squash --delete-branch

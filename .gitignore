@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.astro/
+server/public/
+server/portfolio
+*.log
+.DS_Store
+.env*
+.claude/

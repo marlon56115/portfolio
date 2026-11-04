@@ -1,0 +1,260 @@
+---
+import type { Lang } from '../i18n/content';
+import { dict } from '../i18n/content';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = dict[lang];
+const w = t.work;
+
+const months: Record<Lang, string[]> = {
+  es: ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'],
+  en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+};
+const fmt = (ym: string) => {
+  const [y, m] = ym.split('-').map(Number);
+  return `${months[lang][(m ?? 1) - 1]} ${y}`;
+};
+---
+
+<section class="section" id="work">
+  <div class="wrap">
+    <header class="section-head" data-reveal>
+      <p class="section-index"><b>02</b> / {w.label}</p>
+      <div>
+        <h2 class="section-title">{w.title}</h2>
+        <p class="section-lead">{w.lead}</p>
+      </div>
+    </header>
+
+    <div class="log">
+      <p class="cmd mono" aria-hidden="true"><span>$</span> git log --graph --oneline career</p>
+      <ol class="commits">
+        {
+          t.jobs.map((j, i) => (
+            <li class="commit" data-reveal>
+              <div class="graph" aria-hidden="true">
+                <span class:list={['dot', { head: i === 0 }]} />
+              </div>
+              <details class="body" open={i === 0}>
+                <summary>
+                  <span class="line1 mono">
+                    <span class="hash">{j.id}</span>
+                    {j.tag && (
+                      <span class="ref">
+                        {j.tag === 'HEAD' ? (
+                          <>
+                            <b>HEAD</b> → main
+                          </>
+                        ) : (
+                          <>tag: {j.tag}</>
+                        )}
+                      </span>
+                    )}
+                    <span class="date">
+                      {fmt(j.from)} — {j.to ? fmt(j.to) : w.present}
+                    </span>
+                  </span>
+                  <span class="line2">
+                    <span class="company">{j.company}</span>
+                    <span class="role">{j.role}</span>
+                  </span>
+                  <span class="summary">{j.summary}</span>
+                  <span class="toggle mono" data-js-only>
+                    <span class="t-show">{w.show}</span>
+                    <span class="t-hide">{w.hide}</span>
+                  </span>
+                </summary>
+                <div class="more">
+                  <ul class="points">
+                    {j.points.map((p) => (
+                      <li>{p}</li>
+                    ))}
+                  </ul>
+                  <ul class="chip-list">
+                    {j.stack.map((s) => (
+                      <li class="chip">{s}</li>
+                    ))}
+                  </ul>
+                  <p class="mode mono">{j.mode}</p>
+                </div>
+              </details>
+            </li>
+          ))
+        }
+        <li class="commit root" aria-hidden="true">
+          <div class="graph"><span class="dot" /></div>
+          <p class="body mono root-msg"><span class="hash">1f00d00</span> init · CE INSA 2017 → UES 2023</p>
+        </li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<style>
+  .log {
+    max-width: 880px;
+    margin-left: auto;
+    margin-right: 0;
+  }
+  .cmd {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 18px;
+  }
+  .cmd span {
+    color: var(--accent);
+  }
+  .commits {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .commit {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 12px;
+  }
+  .graph {
+    position: relative;
+  }
+  .graph::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--line-strong);
+  }
+  .commit:first-child .graph::before {
+    top: 14px;
+  }
+  .root .graph::before {
+    bottom: calc(100% - 14px);
+  }
+  .dot {
+    position: absolute;
+    left: 3px;
+    top: 9px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ink-2);
+    background: var(--bg);
+  }
+  .dot.head {
+    border-color: var(--accent);
+    background: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-soft);
+  }
+  .body {
+    padding-bottom: 28px;
+  }
+  summary {
+    display: grid;
+    gap: 6px;
+    cursor: pointer;
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  .line1 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+    font-size: 13px;
+  }
+  .hash {
+    color: var(--warn);
+  }
+  .ref {
+    color: var(--ok);
+  }
+  .ref b {
+    font-weight: 500;
+    color: var(--accent-ink);
+  }
+  .date {
+    color: var(--muted);
+  }
+  .line2 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 12px;
+  }
+  .company {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .role {
+    color: var(--ink-2);
+  }
+  .summary {
+    color: var(--ink-2);
+    max-width: 70ch;
+  }
+  .toggle {
+    font-size: 12px;
+    color: var(--muted);
+    width: fit-content;
+  }
+  .toggle::before {
+    content: '+ ';
+    color: var(--accent);
+  }
+  details[open] .toggle::before {
+    content: '− ';
+  }
+  .t-hide,
+  details[open] .t-show {
+    display: none;
+  }
+  details[open] .t-hide {
+    display: inline;
+  }
+  summary:hover .company {
+    color: var(--accent-ink);
+  }
+  .more {
+    margin-top: 14px;
+    padding: 16px 18px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .points {
+    list-style: none;
+    display: grid;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .points li {
+    position: relative;
+    padding-left: 18px;
+    color: var(--ink-2);
+  }
+  .points li::before {
+    content: '+';
+    position: absolute;
+    left: 0;
+    font-family: var(--font-mono);
+    color: var(--ok);
+  }
+  .mode {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .root-msg {
+    padding: 6px 0 0;
+    font-size: 13px;
+    color: var(--muted);
+  }
+</style>

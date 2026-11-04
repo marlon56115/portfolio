@@ -1,0 +1,499 @@
+---
+import type { Lang } from '../i18n/content';
+import { dict } from '../i18n/content';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = dict[lang];
+const s = t.system;
+const a = t.arch;
+
+type Node = { id: keyof typeof a; meta: string };
+const zones: { label: string; nodes: Node[] }[] = [
+  { label: 'internet', nodes: [{ id: 'visitor', meta: 'HTTPS' }] },
+  {
+    label: 'cloudflare',
+    nodes: [
+      { id: 'edge', meta: 'TLS · cache · WAF' },
+      { id: 'tunnel', meta: 'outbound only' },
+    ],
+  },
+  {
+    label: 'homelab · k3s',
+    nodes: [
+      { id: 'cloudflared', meta: 'ns/cloudflared' },
+      { id: 'pod', meta: 'go · distroless' },
+      { id: 'prometheus', meta: 'ns/monitoring' },
+    ],
+  },
+];
+const delivery: Node[] = [
+  { id: 'github', meta: 'git tag v*' },
+  { id: 'ghcr', meta: 'image:X.Y.Z' },
+  { id: 'flux', meta: 'pull · 1m' },
+];
+---
+
+<section class="section" id="system">
+  <div class="wrap">
+    <header class="section-head" data-reveal>
+      <p class="section-index"><b>01</b> / {s.label}</p>
+      <div>
+        <h2 class="section-title">{s.title}</h2>
+        <p class="section-lead">{s.lead}</p>
+      </div>
+    </header>
+
+    <div class="panel" data-status-panel data-reveal aria-live="polite">
+      <div class="panel-bar mono">
+        <span class="panel-host"><span class="led is-off" data-status-led></span> homelab</span>
+        <span class="panel-meta" data-status-meta>{s.loading}</span>
+      </div>
+
+      <div class="tiles">
+        <div class="tile">
+          <p class="k mono">{s.uptime}</p>
+          <p class="v" data-metric="uptime">—</p>
+        </div>
+        <div class="tile">
+          <p class="k mono">{s.cpu}</p>
+          <p class="v" data-metric="cpu">—</p>
+          <span class="bar"><span data-bar="cpu"></span></span>
+        </div>
+        <div class="tile">
+          <p class="k mono">{s.memory}</p>
+          <p class="v" data-metric="mem">—</p>
+          <span class="bar"><span data-bar="mem"></span></span>
+        </div>
+        <div class="tile">
+          <p class="k mono">{s.pods}</p>
+          <p class="v" data-metric="pods">—</p>
+          <p class="sub mono" data-metric="namespaces"></p>
+        </div>
+        <div class="tile">
+          <p class="k mono">{s.temp}</p>
+          <p class="v" data-metric="temp">—</p>
+        </div>
+        <div class="tile">
+          <p class="k mono">{s.network}</p>
+          <p class="v v-sm" data-metric="net">—</p>
+        </div>
+        <div class="tile">
+          <p class="k mono">{s.disk}</p>
+          <p class="v" data-metric="disk">—</p>
+          <span class="bar"><span data-bar="disk"></span></span>
+        </div>
+        <div class="tile tile-spark">
+          <p class="k mono">{s.cpuHistory}</p>
+          <svg class="spark" viewBox="0 0 240 56" preserveAspectRatio="none" aria-hidden="true" data-spark>
+            <path class="spark-area" d=""></path>
+            <path class="spark-line" d=""></path>
+          </svg>
+        </div>
+      </div>
+
+      <p class="panel-foot mono">
+        <span data-status-source>{s.source}</span>
+        <span class="panel-sys" data-metric="sys"></span>
+      </p>
+    </div>
+
+    <div class="arch" data-arch data-reveal>
+      <div class="arch-head">
+        <h3>{s.archTitle}</h3>
+        <p>{s.archLead}</p>
+      </div>
+
+      <div class="lane" role="list">
+        {
+          zones.map((z) => (
+            <div class="zone" role="listitem">
+              <span class="zone-label mono">{z.label}</span>
+              <div class="zone-nodes">
+                {z.nodes.map((n) => (
+                  <button
+                    class="node"
+                    type="button"
+                    data-node={n.id}
+                    aria-pressed={n.id === 'pod' ? 'true' : 'false'}
+                    aria-controls="arch-detail"
+                  >
+                    <span class="node-t">{a[n.id].t}</span>
+                    <span class="node-m mono">{n.meta}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))
+        }
+      </div>
+
+      <div class="lane lane-deploy">
+        <span class="zone-label mono">{s.deployTitle}</span>
+        <div class="zone-nodes">
+          {
+            delivery.map((n) => (
+              <button class="node node-quiet" type="button" data-node={n.id} aria-pressed="false" aria-controls="arch-detail">
+                <span class="node-t">{a[n.id].t}</span>
+                <span class="node-m mono">{n.meta}</span>
+              </button>
+            ))
+          }
+          <span class="node-end mono" aria-hidden="true">→ portfolio</span>
+        </div>
+      </div>
+
+      <div class="detail" id="arch-detail" aria-live="polite">
+        {
+          Object.entries(a).map(([id, v]) => (
+            <div class="detail-item" data-detail={id} hidden={id !== 'pod'}>
+              <p class="detail-t mono">
+                <span>$</span> describe {id}
+              </p>
+              <p class="detail-d">{v.d}</p>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* ---------- panel ---------- */
+  .panel {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+  .panel-bar,
+  .panel-foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 16px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .panel-bar {
+    border-bottom: 1px solid var(--line);
+  }
+  .panel-foot {
+    border-top: 1px solid var(--line);
+    flex-wrap: wrap;
+  }
+  .panel-host {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ink);
+  }
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .tile {
+    position: relative;
+    padding: 18px 16px 20px;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    min-height: 112px;
+  }
+  .tile:nth-child(4n) {
+    border-right: 0;
+  }
+  .tile:nth-last-child(-n + 4) {
+    border-bottom: 0;
+  }
+  .k {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .v {
+    margin-top: 10px;
+    font: 500 28px/1.1 var(--font-mono);
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+  }
+  .v-sm {
+    font-size: 20px;
+    line-height: 1.4;
+  }
+  .sub {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .bar {
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: 14px;
+    height: 3px;
+    background: var(--surface-2);
+    overflow: hidden;
+  }
+  .bar span {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: var(--accent);
+    transition: width 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .spark {
+    display: block;
+    width: 100%;
+    height: 56px;
+    margin-top: 12px;
+  }
+  .spark-line {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+  }
+  .spark-area {
+    fill: var(--accent-soft);
+  }
+  .panel[data-state='offline'] .v {
+    color: var(--muted);
+  }
+  @media (max-width: 860px) {
+    .tiles {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .tile:nth-child(4n) {
+      border-right: 1px solid var(--line);
+    }
+    .tile:nth-child(2n) {
+      border-right: 0;
+    }
+    .tile:nth-last-child(-n + 4) {
+      border-bottom: 1px solid var(--line);
+    }
+    .tile:nth-last-child(-n + 2) {
+      border-bottom: 0;
+    }
+    .v {
+      font-size: 24px;
+    }
+  }
+
+  /* ---------- arquitectura ---------- */
+  .arch {
+    margin-top: clamp(40px, 6vw, 72px);
+  }
+  .arch-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    margin-bottom: 20px;
+  }
+  .arch-head h3 {
+    font-size: 20px;
+  }
+  .arch-head p {
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .lane {
+    display: flex;
+    gap: 12px;
+  }
+  .zone {
+    flex: var(--n, 1);
+    position: relative;
+    padding: 28px 12px 12px;
+    border: 1px dashed var(--line-strong);
+    border-radius: var(--radius);
+  }
+  .zone:nth-child(1) {
+    --n: 1;
+  }
+  .zone:nth-child(2) {
+    --n: 2;
+  }
+  .zone:nth-child(3) {
+    --n: 3;
+    border-style: solid;
+    border-color: var(--line-strong);
+    background: color-mix(in srgb, var(--accent) 3%, transparent);
+  }
+  .zone-label {
+    position: absolute;
+    top: 8px;
+    left: 12px;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+  .zone-nodes {
+    display: flex;
+    gap: 22px;
+    height: 100%;
+  }
+  .node {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    min-width: 0;
+    text-align: left;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+  }
+  .node:hover {
+    border-color: var(--line-strong);
+    transform: translateY(-1px);
+  }
+  .node[aria-pressed='true'] {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .node-t {
+    font-weight: 500;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+  }
+  .node-m {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  /* Conector entre nodos, con un "paquete" que viaja. */
+  .zone-nodes > .node:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: -23px;
+    width: 22px;
+    height: 1px;
+    background: var(--line-strong);
+  }
+  .zone:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: calc(50% + 8px);
+    right: -13px;
+    width: 12px;
+    height: 1px;
+    background: var(--line-strong);
+  }
+  .js .zone-nodes > .node:not(:last-child)::before,
+  .js .zone:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    top: calc(50% - 2px);
+    right: -23px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0;
+    animation: packet 3.2s linear infinite;
+    z-index: 1;
+  }
+  .js .zone:not(:last-child)::before {
+    top: calc(50% + 6px);
+    right: -13px;
+  }
+  @keyframes packet {
+    0% {
+      opacity: 0;
+      transform: translateX(0);
+    }
+    10%,
+    30% {
+      opacity: 1;
+    }
+    40%,
+    100% {
+      opacity: 0;
+      transform: translateX(18px);
+    }
+  }
+  .lane-deploy {
+    position: relative;
+    margin-top: 12px;
+    padding: 28px 12px 12px;
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+  }
+  .lane-deploy .zone-nodes {
+    flex: 1;
+    align-items: stretch;
+  }
+  .node-quiet {
+    background: transparent;
+  }
+  .node-end {
+    align-self: center;
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .detail {
+    margin-top: 12px;
+    min-height: 88px;
+    padding: 16px 18px;
+    border: 1px solid var(--line);
+    border-left: 2px solid var(--accent);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .detail-t {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .detail-t span {
+    color: var(--accent);
+  }
+  .detail-d {
+    margin-top: 8px;
+    max-width: 72ch;
+    color: var(--ink-2);
+  }
+  @media (max-width: 860px) {
+    .lane {
+      flex-direction: column;
+    }
+    .zone-nodes {
+      flex-direction: column;
+      gap: 14px;
+    }
+    .zone-nodes > .node:not(:last-child)::after {
+      top: auto;
+      bottom: -15px;
+      right: auto;
+      left: 24px;
+      width: 1px;
+      height: 14px;
+    }
+    .zone:not(:last-child)::after {
+      top: auto;
+      bottom: -13px;
+      right: auto;
+      left: 36px;
+      width: 1px;
+      height: 12px;
+    }
+    .js .zone-nodes > .node:not(:last-child)::before,
+    .js .zone:not(:last-child)::before {
+      display: none;
+    }
+    .node-end {
+      align-self: flex-start;
+    }
+  }
+</style>

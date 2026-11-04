@@ -1,0 +1,202 @@
+---
+import type { Lang } from '../i18n/content';
+import { dict } from '../i18n/content';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = dict[lang];
+const links = [
+  ['system', t.nav.system],
+  ['work', t.nav.work],
+  ['projects', t.nav.projects],
+  ['skills', t.nav.skills],
+  ['contact', t.nav.contact],
+] as const;
+---
+
+<header class="hdr" data-header>
+  <div class="wrap hdr-in">
+    <a class="brand" href={`/${lang}/`} aria-label={t.name}>
+      <span class="brand-mark" aria-hidden="true">mg</span>
+      <span class="brand-path mono"><span class="brand-host">marlon</span><span class="muted">@homelab:~</span></span>
+    </a>
+
+    <nav class="nav" aria-label="primary">
+      <ul>
+        {
+          links.map(([id, label]) => (
+            <li>
+              <a href={`#${id}`} data-nav={id}>
+                {label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="tools">
+      <div class="lang mono" role="group" aria-label={t.ui.language}>
+        <a href="/es/" hreflang="es" lang="es" data-set-lang="es" aria-current={lang === 'es' ? 'true' : undefined}>es</a>
+        <span aria-hidden="true">/</span>
+        <a href="/en/" hreflang="en" lang="en" data-set-lang="en" aria-current={lang === 'en' ? 'true' : undefined}>en</a>
+      </div>
+      <button class="icon-btn" type="button" data-theme-toggle aria-label={t.ui.theme} title={t.ui.theme} data-js-only>
+        <svg class="i-sun" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+          <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"></circle>
+          <path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+        </svg>
+        <svg class="i-moon" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+          <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path>
+        </svg>
+      </button>
+      <button class="term-btn mono" type="button" data-terminal-open aria-label={t.ui.openTerminal} data-js-only>
+        <span aria-hidden="true">&gt;_</span><kbd aria-hidden="true">`</kbd>
+      </button>
+    </div>
+  </div>
+</header>
+
+<style>
+  .hdr {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: color-mix(in srgb, var(--bg) 86%, transparent);
+    backdrop-filter: saturate(1.4) blur(10px);
+    -webkit-backdrop-filter: saturate(1.4) blur(10px);
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+  }
+  .hdr.is-scrolled {
+    border-bottom-color: var(--line);
+  }
+  .hdr-in {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    height: 60px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    min-width: 0;
+  }
+  .brand-mark {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius);
+    background: var(--ink);
+    color: var(--bg);
+    font: 600 13px/1 var(--font-mono);
+    letter-spacing: -0.04em;
+  }
+  .brand-path {
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .brand-host {
+    color: var(--ink);
+  }
+  .muted {
+    color: var(--muted);
+  }
+  .nav {
+    margin-left: auto;
+  }
+  .nav ul {
+    display: flex;
+    gap: 4px;
+    list-style: none;
+  }
+  .nav a {
+    display: block;
+    padding: 6px 10px;
+    font: 400 13px/1 var(--font-mono);
+    color: var(--muted);
+    text-decoration: none;
+    border-radius: var(--radius);
+  }
+  .nav a:hover,
+  .nav a.is-active {
+    color: var(--ink);
+  }
+  .nav a.is-active::before {
+    content: '#';
+    color: var(--accent);
+  }
+  .tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .lang {
+    display: flex;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--muted);
+    padding: 0 6px;
+  }
+  .lang a {
+    text-decoration: none;
+    color: var(--muted);
+  }
+  .lang a[aria-current='true'] {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--accent);
+  }
+  .icon-btn,
+  .term-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--ink-2);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .icon-btn:hover,
+  .term-btn:hover {
+    border-color: var(--accent);
+    color: var(--ink);
+  }
+  .term-btn {
+    font-size: 12px;
+  }
+  .i-moon {
+    display: none;
+  }
+  :global([data-theme='dark']) .i-moon {
+    display: block;
+  }
+  :global([data-theme='dark']) .i-sun {
+    display: none;
+  }
+  @media (max-width: 900px) {
+    .nav {
+      display: none;
+    }
+    .tools {
+      margin-left: auto;
+    }
+  }
+  @media (max-width: 420px) {
+    .brand-path .muted {
+      display: none;
+    }
+    .term-btn kbd {
+      display: none;
+    }
+  }
+</style>

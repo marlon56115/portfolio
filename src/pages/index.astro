@@ -1,0 +1,28 @@
+---
+// En producción el servidor Go redirige "/" según la cookie, el país (CF-IPCountry) o el navegador.
+// Esta página solo se ve sin ese servidor (p. ej. astro preview).
+import '../styles/global.css';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Marlon Guerra</title>
+    <link rel="canonical" href="https://marlon.mihomeserver.com/en/" />
+  </head>
+  <body>
+    <main class="wrap pick">
+      <p class="mono">marlon@homelab:~$ ls</p>
+      <p><a href="/es/">es/</a> &nbsp; <a href="/en/">en/</a></p>
+    </main>
+  </body>
+</html>
+
+<style>
+  .pick {
+    padding-top: 30vh;
+    font-family: var(--font-mono);
+  }
+</style>
