@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/marlon56115/portfolio
-  tag: "0.1.0" # lo fija el HelmRelease de home-server
+  tag: "0.1.1" # lo fija el HelmRelease de home-server
   pullPolicy: IfNotPresent
 
 replicaCount: 1

@@ -239,7 +239,7 @@ export function initTerminal(ctx: Ctx) {
         'contact.txt': () => cmds.contact?.([]),
       };
       if (!f) return print([dim('usage: cat <file>')]);
-      const fn = map[f];
+      const fn = Object.hasOwn(map, f) ? map[f] : undefined;
       if (fn) fn();
       else print([{ t: `cat: ${f}: ${s.noFile}`, c: 'c-err' }]);
     },
@@ -265,8 +265,9 @@ export function initTerminal(ctx: Ctx) {
     if (history.length > 50) history.shift();
     hIdx = history.length;
     const [head = '', ...args] = trimmed.split(/\s+/);
-    const key = alias[head.toLowerCase()] ?? head.toLowerCase();
-    const fn = cmds[key];
+    const lower = head.toLowerCase();
+    const key = Object.hasOwn(alias, lower) ? (alias[lower] as string) : lower;
+    const fn = Object.hasOwn(cmds, key) ? cmds[key] : undefined;
     if (fn) await fn(args);
     else print([{ t: `${head}: ${data.notFound}`, c: 'c-err' }, dim(' · help')]);
   }

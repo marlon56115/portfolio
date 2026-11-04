@@ -44,7 +44,9 @@ func (l *limiter) allow(key string) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if now.Sub(l.lastGC) > time.Minute || len(l.buckets) >= l.maxKeys {
+	// Limpieza periódica; si la tabla se llena, como mucho una vez por segundo para que un flood
+	// de IP distintas no convierta cada petición en un recorrido completo bajo el candado.
+	if since := now.Sub(l.lastGC); since > time.Minute || (len(l.buckets) >= l.maxKeys && since > time.Second) {
 		l.gc(now)
 	}
 	b, ok := l.buckets[key]

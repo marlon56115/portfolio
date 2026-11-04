@@ -94,7 +94,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ip := clientIP(r)
+	ip := limitKey(clientIP(r))
 	if !h.limiter.allow(ip) {
 		sw.Header().Set("Retry-After", "5")
 		http.Error(sw, "too many requests", http.StatusTooManyRequests)
@@ -241,6 +241,16 @@ func clientIP(r *http.Request) string {
 		return r.RemoteAddr
 	}
 	return host
+}
+
+// limitKey agrupa IPv6 por /64: un atacante suele tener un /64 entero y podría rotar direcciones
+// para esquivar el límite o llenar la tabla.
+func limitKey(ip string) string {
+	p := net.ParseIP(ip)
+	if p == nil || p.To4() != nil {
+		return ip
+	}
+	return p.Mask(net.CIDRMask(64, 128)).String() + "/64"
 }
 
 var spanishCountries = map[string]bool{

@@ -20,7 +20,7 @@ func TestCollectorPublishesOnlyAggregates(t *testing.T) {
 		case r.URL.Path == "/api/v1/query_range":
 			_, _ = io.WriteString(w, `{"status":"success","data":{"resultType":"matrix","result":[{"metric":{},"values":[[1,"0.1"],[2,"0.2"],[3,"NaN"]]}]}}`)
 		case q == infoQuery:
-			_, _ = io.WriteString(w, `{"status":"success","data":{"resultType":"vector","result":[{"metric":{"kubelet_version":"v1.36.5+k3s1","os_image":"Ubuntu 26.04.1 LTS","internal_ip":"192.168.0.250","kernel_version":"7.0.0-38-generic"},"value":[1,"1"]}]}}`)
+			_, _ = io.WriteString(w, `{"status":"success","data":{"resultType":"vector","result":[{"metric":{"kubelet_version":"v9.8.7+k3s1","os_image":"Ubuntu 99.04.3 LTS","internal_ip":"10.0.0.1","kernel_version":"1.2.3-fake"},"value":[1,"1"]}]}}`)
 		default:
 			_, _ = io.WriteString(w, `{"status":"success","data":{"resultType":"vector","result":[{"metric":{"pod":"secret-pod","namespace":"secret-ns"},"value":[1,"0.123456"]}]}}`)
 		}
@@ -34,7 +34,7 @@ func TestCollectorPublishesOnlyAggregates(t *testing.T) {
 		t.Fatal("no snapshot")
 	}
 	body := string(b)
-	for _, leak := range []string{"secret-pod", "secret-ns", "192.168", "7.0.0", "1.36.5"} {
+	for _, leak := range []string{"secret-pod", "secret-ns", "10.0.0.1", "1.2.3-fake", "9.8.7"} {
 		if strings.Contains(body, leak) {
 			t.Fatalf("snapshot leaks %q: %s", leak, body)
 		}
@@ -43,7 +43,7 @@ func TestCollectorPublishesOnlyAggregates(t *testing.T) {
 	if err := json.Unmarshal(b, &s); err != nil {
 		t.Fatal(err)
 	}
-	if !s.OK || s.CPU == nil || *s.CPU != 0.1235 || s.K8s != "v1.36" || s.OS != "Ubuntu 26.04" || len(s.CPUHistory) != 2 {
+	if !s.OK || s.CPU == nil || *s.CPU != 0.1235 || s.K8s != "v9.8" || s.OS != "Ubuntu 99.04" || len(s.CPUHistory) != 2 {
 		t.Fatalf("unexpected snapshot: %s", body)
 	}
 }

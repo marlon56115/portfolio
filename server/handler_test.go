@@ -167,3 +167,15 @@ func TestLimiterBoundedMemory(t *testing.T) {
 		t.Fatalf("limiter grew to %d keys", len(l.buckets))
 	}
 }
+
+func TestLimitKeyGroupsIPv6(t *testing.T) {
+	if limitKey("2001:db8:1:2:aaaa::1") != limitKey("2001:db8:1:2:ffff::9") {
+		t.Fatal("same /64 must share a bucket")
+	}
+	if limitKey("2001:db8:1:2::1") == limitKey("2001:db8:1:3::1") {
+		t.Fatal("different /64 must not share a bucket")
+	}
+	if limitKey("203.0.113.7") != "203.0.113.7" {
+		t.Fatal("IPv4 unchanged")
+	}
+}
