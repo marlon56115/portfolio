@@ -1,8 +1,13 @@
 ---
+// Contacto (05): el cierre de la página. Dueño en la fase 2: pf-contact.
+// Acción principal: copiar el correo (con mailto de respaldo). Secundarias: LinkedIn y GitHub.
+// Contexto: disponibilidad, hora local en vivo, tiempo de respuesta, idiomas, referencias.
+// Borrador opcional que arma un mailto: (sin backend; la CSP tiene form-action 'none').
+// Interacción en src/scripts/sections/contact.ts. Sin JS: el correo es un enlace mailto y todo se lee.
 import type { Lang } from '../i18n';
 import { dict } from '../i18n';
+import { availability, timeZone } from '../i18n/contact';
 import { sectionIndex } from '../lib/sections';
-import SectionHead from './ui/SectionHead.astro';
 
 interface Props {
   lang: Lang;
@@ -10,93 +15,791 @@ interface Props {
 const { lang } = Astro.props;
 const t = dict[lang];
 const c = t.contact;
+const idx = sectionIndex('contact');
+
+const ledClass = { open: '', limited: 'ct-led--warn', closed: 'is-off' }[availability];
+// Desfase fijo de El Salvador (sin horario de verano). El script lo recalcula con Intl.
+const utc = 'UTC−6';
+const msgMax = 1500;
 ---
 
-<section class="section contact" id="contact">
+<section class="section contact" id="contact" aria-labelledby="contact-title" data-contact data-tz={timeZone}>
   <div class="wrap">
-    <SectionHead index={sectionIndex('contact')} label={c.label} title={c.title} lead={c.lead} />
+    <header class="ct-head" data-reveal>
+      <p class="section-index"><b>{idx}</b> / {c.label}</p>
+      <h2 class="ct-title" id="contact-title">
+        <span class="ct-title__a">{c.titleA}</span>{' '}
+        <span class="ct-title__b">{c.titleB}</span>
+      </h2>
+      <p class="ct-lead">{c.lead}</p>
+    </header>
 
-    <div class="links" data-reveal>
-      <div class="link-row">
-        <span class="lk mono">{c.email}</span>
-        <a class="lv" href={`mailto:${t.email}`}>{t.email}</a>
-        <button class="copy mono" type="button" data-copy={t.email} data-copied={t.ui.copied} aria-label={t.ui.copyEmail} data-js-only>
-          {c.copy}
-        </button>
+    <div class="ct-grid">
+      <!-- Acción principal: el correo -->
+      <div class="ct-mail reg reg--volt" data-reveal>
+        <p class="label ct-mail__label">
+          <span class="led led--volt" aria-hidden="true"></span>
+          {c.emailLabel}
+        </p>
+        <a class="ct-addr" href={`mailto:${t.email}`} data-addr>{t.email}</a>
+        <div class="ct-actions">
+          <button class="btn ct-copy" type="button" data-copy={t.email} data-magnetic data-js-only>
+            <span class="ct-copy__icon" aria-hidden="true">
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect class="ct-ic-copy" x="5.25" y="5.25" width="8" height="8"></rect>
+                <path class="ct-ic-copy" d="M10.75 5.25V2.75h-8v8h2.5"></path>
+                <path class="ct-ic-ok" d="M3 8.5l3.2 3.2L13 4.8"></path>
+              </svg>
+            </span>
+            <span class="ct-copy__text" data-copy-text data-idle={c.copy} data-done={c.copied}>{c.copy}</span>
+          </button>
+          <a class="btn btn--ghost ct-mailto" href={`mailto:${t.email}`}>
+            {c.mailto} <span class="arrow" aria-hidden="true">→</span>
+          </a>
+        </div>
+        <p class="ct-feedback" data-copy-feedback aria-hidden="true"></p>
+        <p class="visually-hidden" role="status" aria-live="polite" data-copy-live data-msg-ok={c.copiedLive} data-msg-fail={c.copyFallback}></p>
+        <span class="ct-scan" aria-hidden="true"></span>
       </div>
-      <div class="link-row">
-        <span class="lk mono">{c.linkedin}</span>
-        <a class="lv" href={t.linkedin} rel="noopener noreferrer" target="_blank">in/marlonguerradev <span aria-hidden="true">↗</span></a>
+
+      <!-- Contexto para quien decide -->
+      <aside class="panel ct-status" aria-labelledby="contact-status-title" data-reveal>
+        <div class="panel__bar">
+          <span class:list={['led', ledClass, availability === 'open' && 'is-pulse']} aria-hidden="true"></span>
+          <span class="panel__title" id="contact-status-title">{c.statusTitle}</span>
+          <span class="ct-utc num">{utc}</span>
+        </div>
+        <div class="panel__body ct-status__body">
+          <p class="ct-avail">
+            <strong>{c.status[availability]}</strong>
+            <span>{c.statusNote}</span>
+          </p>
+          <dl class="ct-facts">
+            <div class="ct-fact ct-fact--time">
+              <dt class="label">{c.localTime}</dt>
+              <dd>
+                <span class="ct-clock num" data-js-only>
+                  <time data-clock>--:--</time>
+                  <span class="ct-hours" data-hours data-on={c.workHours} data-off={c.offHours}></span>
+                </span>
+                <span class="ct-place">{c.location} · <span data-utc>{utc}</span></span>
+              </dd>
+            </div>
+            <div class="ct-fact">
+              <dt class="label">{c.response}</dt>
+              <dd>{c.responseValue}</dd>
+            </div>
+            <div class="ct-fact">
+              <dt class="label">{c.mode}</dt>
+              <dd>{c.modeValue}</dd>
+            </div>
+            <div class="ct-fact">
+              <dt class="label">{c.languages}</dt>
+              <dd>
+                <ul class="ct-langs">
+                  {
+                    c.langList.map((l) => (
+                      <li>
+                        <span lang={l.code}>{l.name}</span> <span class="ct-level">{l.level}</span>
+                      </li>
+                    ))
+                  }
+                </ul>
+              </dd>
+            </div>
+            <div class="ct-fact">
+              <dt class="label">{c.refs}</dt>
+              <dd>{c.refsValue}</dd>
+            </div>
+          </dl>
+        </div>
+      </aside>
+
+      <!-- Secundarias: perfiles -->
+      <ul class="ct-cards" role="list" data-reveal-stagger="80">
+        <li data-reveal>
+          <a class="ct-card" href={t.linkedin} target="_blank" rel="noopener noreferrer" data-spot>
+            <span class="ct-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                <path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9.75h4v11H3v-11Zm6.5 0h3.83v1.5h.06c.53-1 1.84-2.06 3.8-2.06 4.05 0 4.81 2.67 4.81 6.14v5.42h-4v-4.8c0-1.15-.02-2.62-1.6-2.62-1.6 0-1.84 1.25-1.84 2.54v4.88h-4v-11Z"></path>
+              </svg>
+            </span>
+            <span class="ct-card__name">{c.linkedin}</span>
+            <span class="ct-card__handle">{c.linkedinHandle}</span>
+            <span class="ct-card__note">{c.linkedinNote}</span>
+            <span class="ct-card__go" aria-hidden="true">↗</span>
+            <span class="visually-hidden">({c.external})</span>
+          </a>
+        </li>
+        <li data-reveal>
+          <a class="ct-card" href={t.github} target="_blank" rel="noopener noreferrer" data-spot>
+            <span class="ct-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                <path d="M12 2.25a9.75 9.75 0 0 0-3.08 19c.49.09.67-.21.67-.47v-1.65c-2.71.59-3.29-1.31-3.29-1.31-.44-1.13-1.08-1.43-1.08-1.43-.89-.6.07-.59.07-.59.98.07 1.5 1.01 1.5 1.01.87 1.49 2.29 1.06 2.85.81.09-.63.34-1.06.62-1.31-2.17-.24-4.44-1.08-4.44-4.82 0-1.07.38-1.94 1.01-2.62-.1-.25-.44-1.24.1-2.58 0 0 .82-.26 2.68 1a9.3 9.3 0 0 1 4.88 0c1.86-1.26 2.68-1 2.68-1 .54 1.34.2 2.33.1 2.58.63.68 1.01 1.55 1.01 2.62 0 3.75-2.28 4.58-4.45 4.82.35.3.66.9.66 1.81v2.68c0 .26.18.57.68.47A9.75 9.75 0 0 0 12 2.25Z"></path>
+              </svg>
+            </span>
+            <span class="ct-card__name">{c.github}</span>
+            <span class="ct-card__handle">{c.githubHandle}</span>
+            <span class="ct-card__note">{c.githubNote}</span>
+            <span class="ct-card__go" aria-hidden="true">↗</span>
+            <span class="visually-hidden">({c.external})</span>
+          </a>
+        </li>
+      </ul>
+
+      <!-- Borrador: arma un mailto: con lo que escribas. Solo con JS. -->
+      <div class="panel ct-compose" data-js-only data-reveal>
+        <div class="panel__bar">
+          <span class="led led--ion" aria-hidden="true"></span>
+          <span class="panel__title" id="contact-compose-title">{c.composeTitle}</span>
+        </div>
+        <form class="panel__body ct-form" aria-labelledby="contact-compose-title" novalidate data-compose data-to={t.email}>
+          <p class="ct-form__lead">{c.composeLead}</p>
+
+          <div class="ct-field">
+            <label class="label" for="ct-name">{c.name}</label>
+            <input
+              class="ct-input"
+              id="ct-name"
+              name="name"
+              type="text"
+              autocomplete="name"
+              maxlength="80"
+              placeholder={c.namePh}
+              aria-describedby="ct-name-err"
+              required
+            />
+            <p class="ct-err" id="ct-name-err" data-err-text={c.errName}></p>
+          </div>
+
+          <fieldset class="ct-field ct-topics">
+            <legend class="label">{c.topic}</legend>
+            <div class="ct-topics__list">
+              {
+                c.topics.map((topic, i) => (
+                  <label class="ct-topic">
+                    <input type="radio" name="topic" value={topic} checked={i === 0} />
+                    <span>{topic}</span>
+                  </label>
+                ))
+              }
+            </div>
+          </fieldset>
+
+          <div class="ct-field">
+            <div class="ct-field__row">
+              <label class="label" for="ct-msg">{c.message}</label>
+              <span class="ct-count num" aria-hidden="true"><span data-count>0</span> / {msgMax}</span>
+            </div>
+            <textarea
+              class="ct-input ct-textarea"
+              id="ct-msg"
+              name="message"
+              rows="5"
+              maxlength={msgMax}
+              placeholder={c.messagePh}
+              aria-describedby="ct-msg-err"
+              required></textarea>
+            <p class="ct-err" id="ct-msg-err" data-err-text={c.errMessage}></p>
+          </div>
+
+          <div class="ct-form__foot">
+            <button class="btn ct-send" type="submit" data-magnetic>
+              {c.send} <span class="arrow" aria-hidden="true">→</span>
+            </button>
+            <p class="ct-form__status" role="status" aria-live="polite" data-compose-status data-opened={c.opened}></p>
+          </div>
+        </form>
       </div>
-      <div class="link-row">
-        <span class="lk mono">{c.github}</span>
-        <a class="lv" href={t.github} rel="noopener noreferrer" target="_blank">marlon56115 <span aria-hidden="true">↗</span></a>
-      </div>
-      <p class="refs">{c.refs}</p>
     </div>
+
+    <p class="ct-eot label" aria-hidden="true">
+      <span class="xmark"></span>
+      <span>{c.eot}</span>
+      <b>EOT</b>
+    </p>
   </div>
 </section>
 
-
-
 <style>
-  .big {
-    font-size: clamp(36px, 6vw, 64px);
-  }
-  .links {
-    max-width: 880px;
-    margin-left: auto;
-    border-top: 1px solid var(--line);
-  }
-  .link-row {
+  /* ---------- cabecera ---------- */
+  .ct-head {
     display: grid;
-    grid-template-columns: 150px minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 16px;
-    padding: 18px 0;
-    border-bottom: 1px solid var(--line);
+    gap: var(--space-m);
+    margin-bottom: clamp(var(--space-xl), 6vw, var(--space-3xl));
   }
-  .lk {
-    font-size: 12px;
-    color: var(--muted);
-    text-transform: lowercase;
-  }
-  .lv {
-    font-size: clamp(18px, 2.6vw, 24px);
+  .ct-title {
+    display: grid;
+    font-size: var(--step-5);
     font-weight: 500;
-    letter-spacing: -0.01em;
+    font-stretch: 75%;
+    letter-spacing: var(--track-display);
+    line-height: var(--lh-tight);
+    text-wrap: balance;
+    max-width: 16ch;
+  }
+  .ct-title__a {
+    color: var(--ink-2);
+  }
+  .ct-title__b {
+    color: var(--volt-ink);
+    font-weight: 600;
+  }
+  .ct-lead {
+    max-width: 56ch;
+    color: var(--ink-2);
+    font-size: var(--step-1);
+    line-height: 1.5;
+  }
+
+  /* ---------- rejilla ---------- */
+  .ct-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'mail' 'status' 'cards' 'compose';
+    gap: var(--space-m);
+  }
+  .ct-mail {
+    grid-area: mail;
+  }
+  .ct-status {
+    grid-area: status;
+  }
+  .ct-cards {
+    grid-area: cards;
+  }
+  .ct-compose {
+    grid-area: compose;
+  }
+  @media (min-width: 1024px) {
+    .ct-grid {
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      grid-template-areas:
+        'mail    status'
+        'cards   status'
+        'compose compose';
+      gap: var(--space-l);
+    }
+  }
+
+  /* ---------- correo (acción principal) ---------- */
+  .ct-mail {
+    --reg-len: 14px;
+    position: relative;
+    container-type: inline-size;
+    display: grid;
+    align-content: start;
+    gap: var(--space-s);
+    padding: clamp(var(--space-m), 5cqi, var(--space-xl)) clamp(var(--space-s), 4cqi, var(--space-xl));
+    overflow: hidden;
+    background-color: color-mix(in srgb, var(--surface) 72%, transparent);
+  }
+  .ct-mail__label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xs);
+  }
+  /* La dirección ocupa el ancho del bloque: 21 caracteres mono ≈ 12.2em → 8cqi. */
+  .ct-addr {
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    max-width: 100%;
+    font-family: var(--font-mono);
+    font-size: clamp(1.125rem, 8cqi, 3.25rem);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    color: var(--ink);
     text-decoration: none;
     overflow-wrap: anywhere;
+    padding-block: var(--space-3xs);
+    background: linear-gradient(var(--volt-ink), var(--volt-ink)) left bottom / 0% 2px no-repeat;
+    transition:
+      background-size var(--dur-3) var(--ease-out),
+      color var(--dur-1) var(--ease-out);
   }
-  .lv:hover {
+  .ct-addr:hover,
+  .ct-mail.is-copied .ct-addr {
+    color: var(--volt-ink);
+    background-size: 100% 2px;
+  }
+  .ct-actions {
+    display: grid;
+    gap: var(--space-xs);
+    margin-top: var(--space-2xs);
+  }
+  .ct-actions .btn {
+    min-height: 52px;
+    width: 100%;
+  }
+  @media (min-width: 560px) {
+    .ct-actions {
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .ct-actions .btn {
+      width: auto;
+    }
+  }
+  .ct-copy {
+    padding-inline: var(--space-l);
+    font-size: var(--step-0);
+  }
+  .ct-copy__icon {
+    display: inline-grid;
+  }
+  .ct-copy__icon svg {
+    display: block;
+  }
+  .ct-ic-ok {
+    stroke-dasharray: 16;
+    stroke-dashoffset: 16;
+    transition: stroke-dashoffset var(--dur-3) var(--ease-out);
+  }
+  .ct-ic-copy {
+    transition: opacity var(--dur-1) var(--ease-out);
+  }
+  .ct-copy.is-done .ct-ic-copy {
+    opacity: 0;
+  }
+  .ct-copy.is-done .ct-ic-ok {
+    stroke-dashoffset: 0;
+  }
+  .ct-copy__text {
+    min-width: 9ch;
+    text-align: left;
+  }
+  .ct-feedback {
+    min-height: 1.5em;
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--muted);
+  }
+  .ct-feedback.is-ok {
     color: var(--volt-ink);
   }
-  .copy {
-    height: 30px;
-    padding: 0 10px;
-    font-size: 12px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: var(--surface);
-    color: var(--muted);
-    cursor: pointer;
+  .ct-feedback.is-warn {
+    color: var(--warn);
   }
-  .copy:hover {
+  .ct-feedback:not(:empty)::before {
+    content: '› ';
+  }
+  /* Barrido de "señal recibida" al copiar. */
+  .ct-scan {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 30%;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, var(--volt-soft) 60%, color-mix(in srgb, var(--volt-ink) 35%, transparent) 99%, transparent);
+    translate: -110% 0;
+    opacity: 0;
+  }
+  .ct-mail.is-copied .ct-scan {
+    animation: ct-scan 900ms var(--ease-in-out) both;
+  }
+  @keyframes ct-scan {
+    0% {
+      translate: -110% 0;
+      opacity: 1;
+    }
+    100% {
+      translate: 360% 0;
+      opacity: 0.6;
+    }
+  }
+
+  /* ---------- estado ---------- */
+  .ct-status {
+    align-self: start;
+  }
+  .ct-led--warn {
+    --led: var(--warn);
+  }
+  .ct-utc {
+    font-family: var(--font-mono);
+    letter-spacing: 0;
+  }
+  .ct-status__body {
+    display: grid;
+    gap: var(--space-m);
+  }
+  .ct-avail {
+    display: grid;
+    gap: var(--space-3xs);
+  }
+  .ct-avail strong {
+    font-family: var(--font-display);
+    font-size: var(--step-2);
+    font-weight: 600;
+    font-stretch: 87.5%;
+    letter-spacing: -0.03em;
+    line-height: var(--lh-heading);
     color: var(--ink);
+  }
+  .ct-avail span {
+    color: var(--ink-2);
+  }
+  .ct-facts {
+    display: grid;
+    border-top: 1px solid var(--line);
+  }
+  .ct-fact {
+    display: grid;
+    grid-template-columns: minmax(0, 7.5rem) minmax(0, 1fr);
+    gap: var(--space-xs);
+    align-items: baseline;
+    padding-block: var(--space-xs);
+    border-bottom: 1px solid var(--line);
+  }
+  .ct-fact dd {
+    color: var(--ink);
+    min-width: 0;
+  }
+  .ct-fact--time dd {
+    display: grid;
+    gap: 2px;
+  }
+  .ct-clock {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 var(--space-2xs);
+  }
+  .ct-clock time {
+    font-family: var(--font-mono);
+    font-size: var(--step-2);
+    font-weight: 500;
+    line-height: 1.1;
+    color: var(--ion-ink);
+  }
+  .ct-hours {
+    font-size: var(--step--1);
+    color: var(--muted);
+  }
+  .ct-place {
+    font-size: var(--step--1);
+    color: var(--ink-2);
+  }
+  .ct-langs {
+    display: grid;
+    gap: 2px;
+    list-style: none;
+    padding: 0;
+  }
+  .ct-level {
+    color: var(--muted);
+    font-size: var(--step--1);
+  }
+
+  /* ---------- tarjetas ---------- */
+  .ct-cards {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-s);
+    list-style: none;
+    padding: 0;
+  }
+  @media (min-width: 600px) {
+    .ct-cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .ct-card {
+    --px: 50%;
+    --py: 50%;
+    --edge: var(--line);
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'icon name go'
+      'icon handle go'
+      'note note note';
+    column-gap: var(--space-s);
+    row-gap: 2px;
+    align-items: center;
+    min-height: 100%;
+    padding: var(--space-m);
+    color: var(--ink);
+    text-decoration: none;
+  }
+  /* Chaflán en pseudos para no recortar el anillo de foco. */
+  .ct-card::before,
+  .ct-card::after {
+    content: '';
+    position: absolute;
+    clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut)));
+    transition: background-color var(--dur-2) var(--ease-out);
+  }
+  .ct-card::before {
+    inset: 0;
+    z-index: -2;
+    background: var(--edge);
+  }
+  .ct-card::after {
+    inset: 1px;
+    z-index: -1;
+    background:
+      radial-gradient(260px circle at var(--px) var(--py), var(--ion-soft), transparent 70%),
+      var(--surface);
+  }
+  .ct-card:hover,
+  .ct-card:focus-visible {
+    --edge: var(--ion);
+  }
+  .ct-card__icon {
+    grid-area: icon;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line-strong);
+    color: var(--ink-2);
+    transition:
+      color var(--dur-1) var(--ease-out),
+      border-color var(--dur-1) var(--ease-out);
+  }
+  .ct-card:hover .ct-card__icon,
+  .ct-card:focus-visible .ct-card__icon {
+    color: var(--ion-ink);
     border-color: var(--ion);
   }
-  .refs {
-    margin-top: 18px;
-    font-size: 14px;
+  .ct-card__name {
+    grid-area: name;
+    font-family: var(--font-display);
+    font-size: var(--step-1);
+    font-weight: 600;
+    font-stretch: 87.5%;
+    letter-spacing: -0.02em;
+  }
+  .ct-card__handle {
+    grid-area: handle;
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--ion-ink);
+    overflow-wrap: anywhere;
+  }
+  .ct-card__note {
+    grid-area: note;
+    margin-top: var(--space-xs);
+    padding-top: var(--space-xs);
+    border-top: 1px dashed var(--line);
+    font-size: var(--step--1);
+    color: var(--ink-2);
+  }
+  .ct-card__go {
+    grid-area: go;
+    align-self: start;
+    font-family: var(--font-mono);
+    font-size: var(--step-1);
+    color: var(--muted);
+    transition:
+      translate var(--dur-2) var(--ease-out),
+      color var(--dur-1) var(--ease-out);
+  }
+  .ct-card:hover .ct-card__go,
+  .ct-card:focus-visible .ct-card__go {
+    color: var(--ion-ink);
+    translate: 3px -3px;
+  }
+
+  /* ---------- borrador ---------- */
+  .ct-form {
+    display: grid;
+    gap: var(--space-m);
+  }
+  .ct-form__lead {
+    max-width: 60ch;
+    color: var(--ink-2);
+  }
+  @media (min-width: 768px) {
+    .ct-form {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      column-gap: var(--space-l);
+    }
+    .ct-form__lead,
+    .ct-form > .ct-field:nth-of-type(2),
+    .ct-form__foot {
+      grid-column: 1 / -1;
+    }
+  }
+  .ct-field {
+    display: grid;
+    gap: var(--space-2xs);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .ct-field__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-s);
+  }
+  .ct-count {
+    font-family: var(--font-mono);
+    font-size: var(--step--2);
     color: var(--muted);
   }
-  @media (max-width: 620px) {
-    .link-row {
-      grid-template-columns: 1fr auto;
-      gap: 4px 12px;
+  .ct-count.is-near {
+    color: var(--warn);
+  }
+  /* 16 px como mínimo: evita el zoom automático de iOS al enfocar. */
+  .ct-input {
+    width: 100%;
+    min-height: 48px;
+    padding: var(--space-xs) var(--space-s);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: var(--bg-2);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: max(16px, var(--step-0));
+    line-height: 1.5;
+    transition:
+      border-color var(--dur-1) var(--ease-out),
+      background-color var(--dur-1) var(--ease-out);
+  }
+  .ct-input::placeholder {
+    color: var(--muted);
+    opacity: 1;
+  }
+  .ct-input:hover {
+    border-color: var(--muted);
+  }
+  .ct-input:focus-visible {
+    border-color: var(--focus);
+    background: var(--surface);
+    outline-offset: 0;
+  }
+  .ct-input[aria-invalid='true'] {
+    border-color: var(--err);
+  }
+  .ct-textarea {
+    resize: vertical;
+    min-height: 140px;
+  }
+  .ct-err {
+    font-size: var(--step--1);
+    color: var(--err);
+  }
+  .ct-err:empty {
+    display: none;
+  }
+  /* Tema: radios como chips de 44 px. */
+  .ct-topics legend {
+    padding: 0;
+    margin-bottom: var(--space-2xs);
+  }
+  .ct-topics__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+  }
+  .ct-topic {
+    position: relative;
+    display: inline-flex;
+  }
+  .ct-topic input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    margin: 0;
+    cursor: pointer;
+  }
+  .ct-topic span {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    min-height: 44px;
+    padding: 0 var(--space-s);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: var(--bg-2);
+    color: var(--ink-2);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    transition:
+      border-color var(--dur-1) var(--ease-out),
+      color var(--dur-1) var(--ease-out),
+      background-color var(--dur-1) var(--ease-out);
+  }
+  .ct-topic span::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--line-strong);
+  }
+  .ct-topic:hover span {
+    border-color: var(--muted);
+    color: var(--ink);
+  }
+  .ct-topic input:checked + span {
+    border-color: var(--volt-ink);
+    background: var(--volt-soft);
+    color: var(--volt-ink);
+  }
+  .ct-topic input:checked + span::before {
+    background: var(--volt-ink);
+  }
+  .ct-topic input:focus-visible + span {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+  }
+  .ct-form__foot {
+    display: grid;
+    gap: var(--space-xs);
+    align-items: center;
+  }
+  .ct-send {
+    min-height: 52px;
+  }
+  .ct-form__status {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--volt-ink);
+  }
+  @media (min-width: 560px) {
+    .ct-form__foot {
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: var(--space-m);
     }
-    .lk {
-      grid-column: 1 / -1;
+  }
+
+  /* ---------- cierre ---------- */
+  .ct-eot {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin-top: clamp(var(--space-xl), 8vw, var(--space-3xl));
+  }
+  .ct-eot::after {
+    content: '';
+    flex: 1;
+    height: 7px;
+    order: -1;
+    max-width: 120px;
+    background:
+      radial-gradient(circle, var(--line-strong) 0 2.5px, transparent 3px) right center / 7px 7px no-repeat,
+      linear-gradient(var(--line-strong) 0 0) left center / calc(100% - 7px) 1px no-repeat;
+  }
+  .ct-eot .xmark {
+    order: -2;
+  }
+
+  @media (min-width: 1024px) {
+    .ct-head {
+      grid-template-columns: 220px minmax(0, 1fr);
+      column-gap: var(--space-xl);
+    }
+    .ct-head .section-index {
+      align-self: start;
+      padding-top: 1.6em;
+      grid-row: span 2;
     }
   }
 </style>
