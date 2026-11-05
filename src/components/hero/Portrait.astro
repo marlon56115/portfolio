@@ -4,7 +4,7 @@
 // Al cargar: "bloqueo de señal" (el semitono se resuelve en la foto con un barrido).
 // Con ratón: una sonda circular muestra el semitono bajo el puntero. Botón: alterna natural / señal.
 // Recorte y semitonos: scripts/hero-photo/ (ver README del script).
-import { Image } from 'astro:assets';
+import { Picture } from 'astro:assets';
 import cutout from '../../assets/hero/marlon-cutout.webp';
 import type { Lang } from '../../i18n';
 import { dict } from '../../i18n';
@@ -20,12 +20,13 @@ const t = dict[lang].hero;
   <div class="portrait__stage" data-portrait-stage>
     <div class="portrait__panel reg" aria-hidden="true"></div>
     <div class="portrait__photo">
-      <Image
+      <Picture
         src={cutout}
         alt={t.photoAlt}
         widths={[280, 420, 640, 840, 1100]}
         sizes="(min-width: 1024px) 440px, (min-width: 768px) 300px, 46vw"
         formats={['avif', 'webp']}
+        fallbackFormat="webp"
         quality={72}
         loading="eager"
         fetchpriority="high"
@@ -79,6 +80,10 @@ const t = dict[lang].hero;
   .portrait__dots {
     position: absolute;
     inset: 0;
+  }
+  .portrait__photo :global(picture) {
+    display: block;
+    height: 100%;
   }
   .portrait__photo :global(img) {
     display: block;
