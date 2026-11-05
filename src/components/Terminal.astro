@@ -1,6 +1,9 @@
 ---
+// Datos de la terminal. Home.astro (congelado) lo renderiza al final de la página; la ventana de la
+// terminal vive en el hero (src/components/hero/TerminalWindow.astro). Aquí solo queda el bloque JSON
+// (no ejecutable: la CSP no lo afecta; `<` escapado).
 import type { Lang } from '../i18n';
-import { dict } from '../i18n';
+import { careerStart, dict } from '../i18n';
 
 interface Props {
   lang: Lang;
@@ -8,189 +11,26 @@ interface Props {
 const { lang } = Astro.props;
 const t = dict[lang];
 
-// Datos para los comandos. Bloque JSON (no ejecutable): la CSP no lo afecta.
+// Lectura defensiva: otras secciones (pf-work) pueden cambiar la forma de sus datos.
 const data = {
   lang,
   name: t.name,
   fullName: t.fullName,
   role: t.hero.title,
   lead: t.hero.lead,
+  now: t.hero.nowValue,
   location: t.location,
   email: t.email,
   linkedin: t.linkedin,
   github: t.github,
-  jobs: t.jobs.map((j) => ({ id: j.id, company: j.company, role: j.role, from: j.from, to: j.to, summary: j.summary })),
-  projects: t.projects.items.map((p) => ({ name: p.name, kicker: p.kicker, summary: p.summary, stack: p.stack })),
-  skills: t.skills.groups.map((g) => ({ k: g.k, v: g.v })),
-  edu: t.skills.edu.map((e) => `${e.t} · ${e.s}`),
-  welcome: t.terminal.welcome,
-  notFound: t.terminal.notFound,
+  careerStart,
+  caps: t.hero.capabilities.map((c) => ({ k: c.k, t: c.t, d: c.d, tools: c.tools })),
+  jobs: (t.jobs ?? []).map((j) => ({ id: j.id, company: j.company, role: j.role, from: j.from, to: j.to, summary: j.summary })),
+  projects: (t.projects?.items ?? []).map((p) => ({ name: p.name, kicker: p.kicker, summary: p.summary, stack: p.stack ?? [] })),
+  skills: (t.skills?.groups ?? []).map((g) => ({ k: g.k, v: g.v })),
+  edu: (t.skills?.edu ?? []).map((e) => `${e.t} · ${e.s}`),
 };
 const json = JSON.stringify(data).replace(/</g, '\\u003c');
 ---
 
-<dialog class="term" data-terminal aria-label={t.terminal.title}>
-  <div class="term-win">
-    <div class="term-bar mono">
-      <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
-      <span class="term-title">{t.terminal.prompt.user}@{t.terminal.prompt.host}: {t.terminal.prompt.path}</span>
-      <button class="term-x" type="button" data-terminal-close aria-label={t.ui.close}>esc</button>
-    </div>
-    <div class="term-out mono" data-terminal-out role="log" aria-live="polite"></div>
-    <form class="term-line mono" data-terminal-form autocomplete="off">
-      <label class="prompt" for="term-in"><span class="u">{t.terminal.prompt.user}</span>@<span class="h">{t.terminal.prompt.host}</span>:<span class="p">{t.terminal.prompt.path}</span>$</label>
-      <input
-        id="term-in"
-        class="term-in"
-        data-terminal-in
-        type="text"
-        spellcheck="false"
-        autocapitalize="off"
-        autocomplete="off"
-        maxlength="120"
-        enterkeyhint="send"
-      />
-    </form>
-  </div>
-</dialog>
 <script type="application/json" id="term-data" is:inline set:html={json} />
-
-<style>
-  .term {
-    width: min(860px, calc(100vw - 24px));
-    max-height: min(620px, calc(100dvh - 48px));
-    padding: 0;
-    border: 1px solid #ffffff1a;
-    border-radius: 6px;
-    background: var(--term-bg);
-    color: var(--term-ink);
-    box-shadow: 0 30px 80px -20px #000000b0;
-    overflow: hidden;
-  }
-  .term::backdrop {
-    background: #0b0c0ecc;
-    backdrop-filter: blur(3px);
-  }
-  .term[open] {
-    animation: pop 0.18s ease-out;
-  }
-  @keyframes pop {
-    from {
-      opacity: 0;
-      transform: translateY(8px) scale(0.99);
-    }
-  }
-  .term-win {
-    display: flex;
-    flex-direction: column;
-    height: min(620px, calc(100dvh - 48px));
-  }
-  .term-bar {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 10px 14px;
-    font-size: 12px;
-    color: #8c919b;
-    border-bottom: 1px solid #ffffff12;
-  }
-  .dots {
-    display: inline-flex;
-    gap: 6px;
-  }
-  .dots i {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #ffffff22;
-  }
-  .term-title {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .term-x {
-    padding: 2px 8px;
-    border: 1px solid #ffffff22;
-    border-radius: 3px;
-    background: none;
-    color: #8c919b;
-    font: inherit;
-    cursor: pointer;
-  }
-  .term-x:hover {
-    color: #e8e6e1;
-  }
-  .term-out {
-    flex: 1;
-    overflow-y: auto;
-    padding: 14px 16px 4px;
-    font-size: 13px;
-    line-height: 1.6;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-    scrollbar-color: #ffffff26 transparent;
-    scrollbar-width: thin;
-  }
-  .term-line {
-    display: flex;
-    gap: 8px;
-    padding: 4px 16px 16px;
-    font-size: 13px;
-  }
-  .prompt {
-    white-space: nowrap;
-    color: #8c919b;
-  }
-  .u {
-    color: #5be38a;
-  }
-  .h {
-    color: #c8ff3d;
-  }
-  .p {
-    color: #38e1ff;
-  }
-  .term-in {
-    flex: 1;
-    min-width: 0;
-    padding: 0;
-    border: 0;
-    outline: 0;
-    background: transparent;
-    color: #e8e6e1;
-    font: inherit;
-    caret-color: #c8ff3d;
-  }
-  .term-out :global(.c-cmd) {
-    color: #e8e6e1;
-  }
-  .term-out :global(.c-dim) {
-    color: #6c717b;
-  }
-  .term-out :global(.c-acc) {
-    color: #c8ff3d;
-  }
-  .term-out :global(.c-ok) {
-    color: #5be38a;
-  }
-  .term-out :global(.c-warn) {
-    color: #ffc93d;
-  }
-  .term-out :global(.c-err) {
-    color: #ff5c7a;
-  }
-  .term-out :global(.c-blue) {
-    color: #38e1ff;
-  }
-  .term-out :global(a) {
-    color: #38e1ff;
-  }
-  @media (max-width: 520px) {
-    .prompt .h,
-    .prompt .u {
-      display: none;
-    }
-  }
-</style>

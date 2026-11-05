@@ -1,0 +1,248 @@
+---
+// Cinco frentes como canales de osciloscopio. Cada canal tiene su forma de onda; el activo la anima.
+// Pasar el cursor / enfocar resalta el canal y sus líneas en la terminal; clic o toque ejecuta
+// `focus <canal>` en la terminal. Sin JS: lista legible con todo el texto.
+import type { Lang } from '../../i18n';
+import { dict } from '../../i18n';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = dict[lang].hero;
+
+const W = 120; // un periodo completo de la onda (la ruta dibuja dos para desplazarse sin cortes)
+const H = 24;
+const mid = H / 2;
+const amp = 8;
+type Fn = (x: number) => number;
+const waves: Record<string, Fn> = {
+  dev: (x) => ((x % 30) < 15 ? -1 : 1), // cuadrada: lógica
+  deploy: (x) => -1 + 2 * Math.floor((x % 40) / 10) / 3, // escalera: versiones
+  infra: (x) => Math.sin((x / 40) * Math.PI * 2), // seno: carga estable
+  data: (x) => ((x % 20) < 3 ? -1 : 0.6), // pulsos: transacciones
+  ai: (x) => 0.55 * Math.sin((x / W) * Math.PI * 6) + 0.3 * Math.sin((x / W) * Math.PI * 14) + 0.15 * Math.sin((x / W) * Math.PI * 26),
+};
+function path(fn: Fn): string {
+  const pts: string[] = [];
+  const step = 1;
+  let prev: number | null = null;
+  for (let x = 0; x <= W * 2; x += step) {
+    const y = +(mid - fn(x) * amp).toFixed(2);
+    // bordes verticales nítidos en las ondas digitales
+    if (prev !== null && Math.abs(y - prev) > amp * 0.6) pts.push(`L${x} ${prev}`);
+    pts.push(`${pts.length ? 'L' : 'M'}${x} ${y}`);
+    prev = y;
+  }
+  return pts.join('');
+}
+---
+
+<div class="chs">
+  <p class="chs__head label"><span>{t.capabilitiesLabel}</span><span class="chs__hint">{t.capabilitiesHint}</span></p>
+  <ol class="chs__list" data-channels>
+    {
+      t.capabilities.map((c, i) => (
+        <li data-ch={c.k} class:list={['ch', { 'is-active': i === 0 }]}>
+          <button class="ch__btn" type="button" data-ch-btn={c.k} aria-pressed={i === 0 ? 'true' : 'false'} aria-controls={`ch-${c.k}`}>
+            <span class="ch__id">CH{i + 1}</span>
+            <span class="ch__t">{c.t}</span>
+            <span class="ch__k" aria-hidden="true">{c.k}</span>
+            <svg class="ch__wave" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true" focusable="false">
+              <path d={path(waves[c.k] ?? waves.infra!)} />
+            </svg>
+          </button>
+          <div class="ch__body" id={`ch-${c.k}`}>
+            <p class="ch__d">{c.d}</p>
+            <p class="ch__tools">{c.tools.join(' · ')}</p>
+          </div>
+        </li>
+      ))
+    }
+  </ol>
+</div>
+
+<style>
+  .chs__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+    margin-bottom: 10px;
+  }
+  .chs__head span:first-child {
+    color: var(--volt-ink);
+  }
+  .chs__hint {
+    text-transform: none;
+    letter-spacing: 0;
+    font-family: var(--font-mono);
+  }
+  .chs__list {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .ch {
+    display: contents;
+  }
+  .ch__btn {
+    position: relative;
+    isolation: isolate;
+    grid-row: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: 2px;
+    min-height: 64px;
+    padding: 8px 8px 6px;
+    border: 0;
+    background: none;
+    color: var(--ink-2);
+    text-align: left;
+    cursor: pointer;
+  }
+  .ch__btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    clip-path: polygon(0 0, calc(100% - var(--cut-s)) 0, 100% var(--cut-s), 100% 100%, 0 100%);
+    transition:
+      border-color var(--dur-1) var(--ease-out),
+      background-color var(--dur-1) var(--ease-out);
+  }
+  .ch__id {
+    font-family: var(--font-display);
+    font-size: 10.5px;
+    font-stretch: 87.5%;
+    letter-spacing: var(--track-label);
+    color: var(--muted);
+  }
+  .ch__t {
+    display: none;
+    font-family: var(--font-display);
+    font-size: var(--step--1);
+    font-weight: 600;
+    font-stretch: 87.5%;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ch__k {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink);
+  }
+  .ch__wave {
+    width: 100%;
+    height: 18px;
+    margin-top: 4px;
+    overflow: hidden;
+  }
+  .ch__wave path {
+    fill: none;
+    stroke: var(--line-strong);
+    stroke-width: 1.4;
+    vector-effect: non-scaling-stroke;
+    transition: stroke var(--dur-1) var(--ease-out);
+  }
+  .ch.is-active .ch__btn::before,
+  .ch__btn:hover::before {
+    border-color: color-mix(in srgb, var(--volt-ink) 55%, transparent);
+    background: var(--surface-2);
+  }
+  .ch.is-active .ch__id {
+    color: var(--volt-ink);
+  }
+  .ch.is-active .ch__wave path,
+  .ch__btn:hover .ch__wave path {
+    stroke: var(--volt-ink);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .ch.is-active .ch__wave path,
+    .ch__btn:hover .ch__wave path {
+      animation: wave-run 2.4s linear infinite;
+    }
+  }
+  @keyframes wave-run {
+    to {
+      transform: translateX(-120px);
+    }
+  }
+  .ch__body {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: none;
+    padding: 12px 2px 0;
+  }
+  .ch.is-active .ch__body {
+    display: block;
+  }
+  .ch__d {
+    max-width: 56ch;
+    color: var(--ink-2);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .ch__tools {
+    margin-top: 6px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ion-ink);
+  }
+
+  /* sin JS: lista simple, todo visible */
+  :global(html:not(.js)) .chs__list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  :global(html:not(.js)) .ch {
+    display: block;
+  }
+  :global(html:not(.js)) .ch__body {
+    display: block;
+    padding-bottom: 8px;
+  }
+  :global(html:not(.js)) .ch__t {
+    display: block;
+  }
+
+  @media (min-width: 560px) {
+    .ch__t {
+      display: block;
+    }
+    .ch__k {
+      display: none;
+    }
+  }
+  /* escritorio: cada canal con su texto debajo */
+  @media (min-width: 1024px) {
+    .ch {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .ch__btn {
+      grid-row: auto;
+    }
+    .ch__body {
+      display: block;
+      padding: 0 4px;
+      opacity: 0.62;
+      transition: opacity var(--dur-2) var(--ease-out);
+    }
+    .ch.is-active .ch__body {
+      opacity: 1;
+    }
+    .ch__d {
+      font-size: 14px;
+    }
+  }
+</style>

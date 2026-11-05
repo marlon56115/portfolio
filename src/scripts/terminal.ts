@@ -1,49 +1,71 @@
-// Terminal del sitio. Toda la salida se construye con nodos y textContent:
-// nada de lo que escribe el visitante se interpreta como HTML.
-import { fetchStatus, fmtBytes, fmtRate, fmtUptime, pct } from './status';
+// Terminal del hero: una shell SIMULADA que corre solo en el navegador (no ejecuta nada en el servidor).
+// Toda la salida se construye con nodos y textContent: nada de lo que escribe el visitante se interpreta
+// como HTML (Trusted Types). Los comandos se buscan con Object.hasOwn (sin sorpresas con "__proto__").
+// Al entrar en pantalla reproduce una intro tecleada (whoami → skills --top) y deja el prompt listo.
+// Con movimiento reducido, la intro ya viene impresa desde el HTML y no se anima.
+import { fetchStatus, fmtUptime, pct } from './status';
 import { terminal } from '../i18n/terminal';
+import { reducedMotion } from '../lib/dom';
+import { yearsSince } from '../lib/time';
 
 type Seg = string | { t: string; c?: string; href?: string };
 type Line = Seg[];
 type Lang = 'es' | 'en';
 
+interface Cap {
+  k: string;
+  t: string;
+  d: string;
+  tools: string[];
+}
 interface Data {
   lang: Lang;
   name: string;
   fullName: string;
   role: string;
   lead: string;
+  now: string;
   location: string;
   email: string;
   linkedin: string;
   github: string;
+  careerStart: string;
+  caps: Cap[];
   jobs: { id: string; company: string; role: string; from: string; to: string | null; summary: string }[];
   projects: { name: string; kicker: string; summary: string; stack: string[] }[];
   skills: { k: string; v: string[] }[];
   edu: string[];
-  welcome: string;
-  notFound: string;
 }
-
 interface Ctx {
   lang: Lang;
   applyTheme: (t: 'light' | 'dark', persist: boolean) => void;
   rememberLang: (l: Lang) => void;
 }
+// Contrato nuevo de /api/status (todo opcional). Solo se leen estos campos.
+interface PublicStatus {
+  uptimeSeconds?: number;
+  requestsServed?: number;
+  cpu?: number;
+  memory?: number;
+  cpuHistory?: number[];
+}
 
-// Textos de la interfaz: src/i18n/terminal.ts (privacidad revisada en la fase 1).
 const S = { es: terminal.es.terminal, en: terminal.en.terminal };
-
 const SECTIONS = ['about', 'work', 'projects', 'skills', 'system', 'contact'];
 const FILES = ['README.md', 'experience.log', 'projects.md', 'skills.yaml', 'contact.txt'];
+const MAX_ROWS = 400;
 
-export function initTerminal(ctx: Ctx) {
-  const dlg = document.querySelector<HTMLDialogElement>('[data-terminal]');
-  const out = document.querySelector<HTMLElement>('[data-terminal-out]');
-  const form = document.querySelector<HTMLFormElement>('[data-terminal-form]');
-  const input = document.querySelector<HTMLInputElement>('[data-terminal-in]');
+const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+
+export function initTerminal(ctx: Ctx): void {
+  const root = document.querySelector<HTMLElement>('[data-terminal]');
+  const out = root?.querySelector<HTMLElement>('[data-terminal-out]');
+  const form = root?.querySelector<HTMLFormElement>('[data-terminal-form]');
+  const input = root?.querySelector<HTMLInputElement>('[data-terminal-in]');
+  const typed = root?.querySelector<HTMLElement>('[data-terminal-typed]');
   const raw = document.getElementById('term-data')?.textContent;
-  if (!dlg || !out || !form || !input || !raw) return;
+  if (!root || !out || !form || !input || !typed || !raw) return;
 
   let data: Data;
   try {
@@ -54,107 +76,136 @@ export function initTerminal(ctx: Ctx) {
   const s = S[ctx.lang];
   const history: string[] = [];
   let hIdx = 0;
-  let greeted = false;
+  let skip = false; // el visitante tomó el control: lo que quede de la intro sale sin animación
+  let queue: Promise<void> = Promise.resolve();
+  let introDone = false;
 
   // ---------- salida ----------
-  const print = (...lines: Line[]) => {
-    for (const line of lines) {
-      const row = document.createElement('div');
-      for (const seg of line) {
-        if (typeof seg === 'string') {
-          row.append(seg);
-          continue;
-        }
-        const el = seg.href ? document.createElement('a') : document.createElement('span');
-        el.textContent = seg.t;
-        if (seg.c) el.className = seg.c;
-        if (seg.href && el instanceof HTMLAnchorElement) {
-          el.href = seg.href;
-          if (seg.href.startsWith('http')) {
-            el.target = '_blank';
-            el.rel = 'noopener noreferrer';
-          }
-        }
-        row.append(el);
+  const row = (line: Line, ch?: string) => {
+    const r = document.createElement('div');
+    r.className = 'r';
+    if (ch) r.dataset.ch = ch;
+    for (const seg of line) {
+      if (typeof seg === 'string') {
+        r.append(seg);
+        continue;
       }
-      if (line.length === 0) row.append(' ');
-      out.append(row);
+      const node = seg.href ? document.createElement('a') : document.createElement('span');
+      node.textContent = seg.t;
+      if (seg.c) node.className = seg.c;
+      if (seg.href && node instanceof HTMLAnchorElement) {
+        node.href = seg.href;
+        if (seg.href.startsWith('http')) {
+          node.target = '_blank';
+          node.rel = 'noopener noreferrer';
+        }
+      }
+      r.append(node);
     }
+    out.append(r);
+    while (out.childElementCount > MAX_ROWS) out.firstElementChild?.remove();
     out.scrollTop = out.scrollHeight;
   };
+  const print = (...lines: Line[]) => lines.forEach((l) => row(l));
   const dim = (t: string): Seg => ({ t, c: 'c-dim' });
   const acc = (t: string): Seg => ({ t, c: 'c-acc' });
   const ok = (t: string): Seg => ({ t, c: 'c-ok' });
+  const err = (t: string): Seg => ({ t, c: 'c-err' });
   const pad = (t: string, n: number) => t.padEnd(n, ' ');
+  const promptSegs = (): Seg[] => [ok(`${s.prompt.user}@${s.prompt.host}`), dim(`:${s.prompt.path}$ `)];
+
+  const still = () => reducedMotion.matches;
+  const sleep = (ms: number, intro = false) =>
+    still() || (intro && skip) ? Promise.resolve() : new Promise<void>((r) => window.setTimeout(r, ms));
+
+  const capRow = (c: Cap, i: number) => row([dim(`CH${i + 1} `), acc(pad(c.k, 7)), c.tools.join(' · ')], c.k);
+  const mail = (): Seg => ({ t: data.email, href: `mailto:${data.email}` });
 
   // ---------- comandos ----------
   const cmds: Record<string, (args: string[]) => void | Promise<void>> = {
     help: () => {
-      print([dim(s.tab)], []);
-      s.commands.forEach(([c, d]) => print([acc(pad(c ?? '', 22)), d ? dim(d ?? '') : '']));
+      print([{ t: s.simLong, c: 'c-blue' }], [dim(s.tab)], []);
+      s.commands.forEach(([c, d]) => print([acc(pad(c ?? '', 20)), d ? dim(d) : '']));
     },
-    whoami: () => print([ok(data.fullName)], [data.role, dim(' · '), data.location]),
+    whoami: () => print([ok(data.name), dim(' — '), data.role], [dim(data.location)]),
     about: () => print([data.lead]),
-    experience: () => {
+    skills: (a) => {
+      if (a[0] === '--top' || a[0] === '-t') {
+        data.caps.forEach(capRow);
+        return;
+      }
+      print([dim('# skills.yaml')]);
+      data.skills.forEach((g) => print([{ t: `${g.k}:`, c: 'c-blue' }, ` [${g.v.join(', ')}]`]));
+    },
+    focus: (a) => {
+      const k = (a[0] ?? '').toLowerCase();
+      const i = data.caps.findIndex((c) => c.k === k);
+      const c = data.caps[i];
+      if (!c) return print([dim(s.focusNo), ' ', data.caps.map((x) => x.k).join(' ')]);
+      row([dim(`CH${i + 1} · `), acc(c.k), dim(' — '), { t: c.t, c: 'c-cmd' }], c.k);
+      row([c.d], c.k);
+      row([{ t: `[${c.tools.join(', ')}]`, c: 'c-blue' }], c.k);
+    },
+    experience: () =>
       data.jobs.forEach((j, i) =>
         print(
           [{ t: '* ', c: i === 0 ? 'c-acc' : 'c-dim' }, { t: j.id, c: 'c-warn' }, ' ', { t: j.company, c: 'c-cmd' }, dim(` — ${j.role}`)],
           [dim('|  '), dim(`${j.from} → ${j.to ?? s.present}  `), j.summary],
         ),
-      );
-    },
+      ),
     projects: () =>
       data.projects.forEach((p) => print([acc(p.name), dim(` — ${p.kicker}`)], [dim('  '), p.summary], [dim(`  [${p.stack.join(', ')}]`)], [])),
-    skills: () => {
-      print([dim('# skills.yaml')]);
-      data.skills.forEach((g) => print([{ t: `${g.k}:`, c: 'c-blue' }, ` [${g.v.join(', ')}]`]));
-    },
     education: () => data.edu.forEach((e) => print([dim('- '), e])),
     contact: () =>
       print(
-        [pad('email', 10), { t: data.email, href: `mailto:${data.email}` }],
+        [pad('email', 10), mail()],
         [pad('linkedin', 10), { t: data.linkedin.replace('https://www.', ''), href: data.linkedin }],
         [pad('github', 10), { t: data.github.replace('https://', ''), href: data.github }],
       ),
     status: async () => {
       print([dim(s.fetching)]);
-      const st = await fetchStatus();
-      if (!st) return print([{ t: s.down, c: 'c-err' }]);
-      print(
-        [pad('uptime', 12), ok(st.uptimeSeconds !== undefined ? fmtUptime(st.uptimeSeconds, ctx.lang) : '—')],
-        [pad('cpu', 12), st.cpu !== undefined ? pct(st.cpu) : '—'],
-        [pad('memory', 12), st.memory !== undefined ? pct(st.memory) : '—', st.memoryTotalBytes ? dim(` of ${fmtBytes(st.memoryTotalBytes)}`) : ''],
-        [pad('pods', 12), String(st.pods ?? '—'), dim(st.namespaces ? ` in ${st.namespaces} namespaces` : '')],
-        [pad('temp', 12), st.cpuTempC !== undefined ? `${st.cpuTempC.toFixed(1)} °C` : '—'],
-        [pad('net', 12), st.netRxBps !== undefined ? `↓ ${fmtRate(st.netRxBps)}  ↑ ${fmtRate(st.netTxBps ?? 0)}` : '—'],
-      );
-    },
-    neofetch: async () => {
-      const st = await fetchStatus();
-      const logo = ['   ▄▄▄▄▄▄▄   ', '  █ ▄▄▄▄▄ █  ', '  █ █   █ █  ', '  █ █▄▄▄█ █  ', '  █▄▄▄▄▄▄▄█  ', '   ▀▀▀▀▀▀▀   '];
-      const info: Line[] = [
-        [ok('visitor'), '@', acc('homelab')],
-        [dim('-----------------')],
-        [acc('OS: '), st?.os ?? 'Ubuntu Server LTS'],
-        [acc('Host: '), 'Ryzen 5 3600 · 32 GB'],
-        [acc('Kernel: '), 'linux'],
-        [acc('Uptime: '), st?.uptimeSeconds !== undefined ? fmtUptime(st.uptimeSeconds, ctx.lang) : '—'],
-        [acc('Orchestrator: '), `k3s ${st?.k8s ?? ''}`],
-        [acc('Pods: '), String(st?.pods ?? '—')],
-        [acc('Shell: '), 'portfolio-sh 1.0'],
-      ];
-      for (let i = 0; i < Math.max(logo.length, info.length); i++) print([dim(logo[i] ?? ' '.repeat(13)), '  ', ...(info[i] ?? [])]);
-    },
-    kubectl: async (a) => {
-      if (a.join(' ') !== 'get pods' && a.join(' ') !== 'get pods -A') {
-        return print([dim('usage: kubectl get pods')]);
+      let st: PublicStatus | null = null;
+      try {
+        st = (await fetchStatus()) as PublicStatus | null;
+      } catch {
+        st = null;
       }
-      const st = await fetchStatus();
-      print(
-        [dim(pad('NAMESPACE', 14) + pad('NAME', 26) + pad('READY', 8) + 'STATUS')],
-        [pad('portfolio', 14), pad('portfolio-7c9f…', 26), pad('1/1', 8), ok('Running')],
-        [dim(`… ${st?.pods ? st.pods - 1 : '?'} more (names are not public)`)],
-      );
+      if (!st) return print([err(s.down)]);
+      const lines: Line[] = [];
+      if (isNum(st.uptimeSeconds)) lines.push([pad(s.uptime, 12), ok(fmtUptime(st.uptimeSeconds, ctx.lang))]);
+      if (isNum(st.requestsServed)) lines.push([pad(s.requests, 12), st.requestsServed.toLocaleString(ctx.lang)]);
+      if (isNum(st.cpu)) lines.push([pad(s.cpu, 12), pct(clamp01(st.cpu))]);
+      if (isNum(st.memory)) lines.push([pad(s.memory, 12), pct(clamp01(st.memory))]);
+      const hist = Array.isArray(st.cpuHistory) ? st.cpuHistory.filter(isNum).slice(-32) : [];
+      if (hist.length > 1) {
+        const bars = '▁▂▃▄▅▆▇█';
+        lines.push([pad(s.load, 12), { t: hist.map((v) => bars[Math.round(clamp01(v) * 7)]).join(''), c: 'c-acc' }]);
+      }
+      if (!lines.length) return print([err(s.down)]);
+      print(...lines, [dim(s.statusNote)]);
+    },
+    neofetch: () => {
+      const n = s.nf;
+      const logo = ['  ┌───────┐  ', '  │ ▚▚ ▞▞ │  ', '  │ ▚▚ ▞▞ │  ', '  │ ▞▞ ▚▚ │  ', '  └──┬─┬──┘  ', '   ──┴─┴──   '];
+      const years = (() => {
+        try {
+          return String(yearsSince(data.careerStart));
+        } catch {
+          return '—';
+        }
+      })();
+      const info: Line[] = [
+        [ok(s.prompt.user), '@', acc(s.prompt.host)],
+        [dim('------------')],
+        [acc(`${n.role}: `), data.role],
+        [acc(`${n.now}: `), data.now],
+        [acc(`${n.focus}: `), data.caps.map((c) => c.k).join(' · ')],
+        [acc(`${n.exp}: `), `${years}+ ${n.years}`],
+        [acc(`${n.langs}: `), n.langsValue],
+        [acc(`${n.host}: `), n.hostValue],
+        [acc(`${n.shell}: `), n.shellValue],
+      ];
+      for (let i = 0; i < Math.max(logo.length, info.length); i++) print([dim(logo[i] ?? ' '.repeat(13)), ' ', ...(info[i] ?? [])]);
     },
     theme: (a) => {
       const v = a[0] === 'light' || a[0] === 'dark' ? a[0] : document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
@@ -170,10 +221,10 @@ export function initTerminal(ctx: Ctx) {
     goto: (a) => {
       const id = a[0] === 'experience' ? 'work' : a[0];
       if (!id || !SECTIONS.includes(id)) return print([dim(s.gotoNo), ' ', SECTIONS.join(' ')]);
-      dlg.close();
-      document.getElementById(id)?.scrollIntoView();
+      input.blur();
+      document.getElementById(id)?.scrollIntoView({ behavior: reducedMotion.matches ? 'auto' : 'smooth' });
     },
-    ls: () => print([...FILES.flatMap((f) => [{ t: f, c: f.endsWith('.md') ? 'c-blue' : 'c-cmd' }, '  '])]),
+    ls: () => print([...FILES.flatMap((f): Seg[] => [{ t: f, c: f.endsWith('.md') ? 'c-blue' : 'c-cmd' }, '  '])]),
     cat: (a) => {
       const f = a[0];
       const map: Record<string, () => void> = {
@@ -186,25 +237,50 @@ export function initTerminal(ctx: Ctx) {
       if (!f) return print([dim('usage: cat <file>')]);
       const fn = Object.hasOwn(map, f) ? map[f] : undefined;
       if (fn) fn();
-      else print([{ t: `cat: ${f}: ${s.noFile}`, c: 'c-err' }]);
+      else print([err(`cat: ${f}: ${s.noFile}`)]);
     },
-    pwd: () => print(['/home/visitor']),
+    pwd: () => print([`/home/${s.prompt.user}`]),
     date: () => print([new Date().toString()]),
     echo: (a) => print([a.join(' ')]),
     history: () => history.forEach((h, i) => print([dim(String(i + 1).padStart(4, ' ') + '  '), h])),
     clear: () => out.replaceChildren(),
-    exit: () => dlg.close(),
-    sudo: (a) => (a.join(' ').includes('hire') ? print([s.hire, ' ', { t: data.email, href: `mailto:${data.email}` }]) : print([{ t: s.sudo, c: 'c-err' }])),
+    exit: () => {
+      print([dim(s.exit)]);
+      input.blur();
+    },
+    sudo: (a) => (a.join(' ').includes('hire') ? print([s.hire, ' ', mail()]) : print([err(s.sudo)])),
+    hire: () => print([s.hire, ' ', mail()]),
     rm: () => print([{ t: s.rm, c: 'c-warn' }]),
-    uname: () => print(['Linux homelab k3s x86_64 GNU/Linux']),
-    hire: () => print([s.hire, ' ', { t: data.email, href: `mailto:${data.email}` }]),
+    ssh: () => print([{ t: s.ssh, c: 'c-warn' }]),
+    vim: () => print([dim(s.vim)]),
+    ':q': () => print([ok(s.quit)]),
+    uname: () => print(['portfolio-sh · simulated · browser']),
   };
-  const alias: Record<string, string> = { work: 'experience', exp: 'experience', stack: 'skills', cls: 'clear', quit: 'exit', '?': 'help', uptime: 'status', top: 'status' };
-  const names = [...Object.keys(cmds), ...Object.keys(alias)].sort();
+  const alias: Record<string, string> = {
+    work: 'experience',
+    exp: 'experience',
+    stack: 'skills',
+    cls: 'clear',
+    quit: 'exit',
+    logout: 'exit',
+    '?': 'help',
+    uptime: 'status',
+    top: 'status',
+    whois: 'whoami',
+    kubectl: 'ssh',
+    docker: 'ssh',
+    telnet: 'ssh',
+    vi: 'vim',
+    nano: 'vim',
+    emacs: 'vim',
+    ':q!': ':q',
+    ':wq': ':q',
+  };
+  const names = [...Object.keys(cmds), ...Object.keys(alias)].filter((n) => !n.startsWith(':')).sort();
 
   async function run(line: string) {
-    const trimmed = line.trim();
-    print([{ t: `${s.prompt.user}@${s.prompt.host}`, c: 'c-ok' }, dim(`:${s.prompt.path}$ `), { t: trimmed, c: 'c-cmd' }]);
+    const trimmed = line.trim().slice(0, 120);
+    row([...promptSegs(), { t: trimmed, c: 'c-cmd' }]);
     if (!trimmed) return;
     history.push(trimmed);
     if (history.length > 50) history.shift();
@@ -213,46 +289,141 @@ export function initTerminal(ctx: Ctx) {
     const lower = head.toLowerCase();
     const key = Object.hasOwn(alias, lower) ? (alias[lower] as string) : lower;
     const fn = Object.hasOwn(cmds, key) ? cmds[key] : undefined;
-    if (fn) await fn(args);
-    else print([{ t: `${head}: ${data.notFound}`, c: 'c-err' }, dim(' · help')]);
+    try {
+      if (fn) await fn(args);
+      else print([err(`${head}: ${s.notFound}`), dim(' · help')]);
+    } catch {
+      print([err(`${head}: error`)]);
+    }
   }
 
-  // ---------- eventos ----------
-  const open = () => {
-    if (dlg.open) return;
-    dlg.showModal();
-    if (!greeted) {
-      greeted = true;
-      print([dim(data.welcome)], []);
-      void run('neofetch');
-    }
-    window.setTimeout(() => input.focus(), 30);
+  /** Teclea el comando en el prompt (si hay movimiento) y lo ejecuta. Serializado en una cola. */
+  const exec = (cmd: string, animate = true, intro = false) => {
+    queue = queue.then(async () => {
+      if (animate && !still() && !(intro && skip)) {
+        const per = intro ? 62 : 22; // los chips se teclean rápido
+        for (const ch of cmd) {
+          if (intro && skip) break;
+          typed.textContent += ch;
+          await sleep(per * 0.6 + Math.random() * per, intro);
+        }
+        await sleep(intro ? 180 : 60, intro);
+      }
+      typed.textContent = '';
+      await run(cmd);
+    });
+    return queue;
   };
-  document.querySelectorAll('[data-terminal-open]').forEach((b) => b.addEventListener('click', open));
-  document.querySelector('[data-terminal-close]')?.addEventListener('click', () => dlg.close());
-  dlg.addEventListener('click', (e) => {
-    if (e.target === dlg) dlg.close();
-  });
-  out.addEventListener('click', () => input.focus());
 
-  document.addEventListener('keydown', (e) => {
-    const target = e.target as HTMLElement | null;
-    const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
-    if (!typing && (e.key === '`' || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k'))) {
-      e.preventDefault();
-      open();
+  // ---------- estado del prompt ----------
+  const line = form;
+  const syncIdle = () => line.classList.toggle('is-idle', document.activeElement !== input && !input.value);
+  input.addEventListener('focus', () => {
+    hurry();
+    syncIdle();
+  });
+  input.addEventListener('blur', syncIdle);
+  input.addEventListener('input', syncIdle);
+  syncIdle();
+
+  /** El visitante tomó el control: lo que quede de la intro se imprime sin animación. */
+  function hurry() {
+    skip = true;
+  }
+
+  const focusTerm = () => {
+    hurry();
+    const r = root.getBoundingClientRect();
+    if (r.top < 0 || r.bottom > window.innerHeight) {
+      root.scrollIntoView({ block: 'nearest', behavior: reducedMotion.matches ? 'auto' : 'smooth' });
     }
-  });
+    input.focus({ preventScroll: true });
+  };
 
+  // ---------- intro ----------
+  const startIntro = () => {
+    if (introDone) return;
+    introDone = true;
+    out.classList.remove('is-pending');
+    if (reducedMotion.matches) return; // la transcripción del HTML ya es la intro
+    out.setAttribute('aria-live', 'off');
+    out.replaceChildren();
+    print([dim(s.welcome)]);
+    void (async () => {
+      await sleep(500, true);
+      await exec('whoami', true, true);
+      await sleep(650, true);
+      await exec('skills --top', true, true);
+      out.setAttribute('aria-live', 'polite');
+    })();
+  };
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          io.disconnect();
+          startIntro();
+        }
+      },
+      { threshold: 0.35 },
+    );
+    io.observe(root);
+  } else startIntro();
+  // Si el visitante usa la terminal antes de verla entera, la intro sale de golpe.
+  const startNow = () => {
+    hurry();
+    startIntro();
+  };
+
+  // ---------- eventos ----------
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    const v = input.value.slice(0, 120);
+    startNow();
+    const v = input.value;
     input.value = '';
-    void run(v);
+    syncIdle();
+    void exec(v, false);
+  });
+  form.addEventListener('click', (e) => {
+    if (e.target !== input) focusTerm();
+  });
+  // Ratón: clic en la salida enfoca (si no se está seleccionando texto). Táctil: no, para no abrir el teclado.
+  out.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('a')) return;
+    if (!window.matchMedia('(pointer: fine)').matches) return;
+    if (window.getSelection()?.toString()) return;
+    focusTerm();
+  });
+  root.querySelectorAll<HTMLButtonElement>('[data-cmd]').forEach((b) =>
+    b.addEventListener('click', () => {
+      startNow();
+      void exec(b.dataset.cmd ?? 'help');
+    }),
+  );
+  document.querySelectorAll('[data-terminal-focus]').forEach((b) => b.addEventListener('click', focusTerm));
+  // Otros módulos (canales del hero) piden comandos con un evento.
+  document.addEventListener('term:run', (e) => {
+    const cmd = (e as CustomEvent<string>).detail;
+    if (typeof cmd !== 'string') return;
+    startNow();
+    void exec(cmd.slice(0, 120));
+  });
+
+  document.addEventListener('keydown', (e) => {
+    const t = e.target as HTMLElement | null;
+    const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
+    if (typing) return;
+    if (e.key === '/' || e.key === '`' || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k')) {
+      e.preventDefault();
+      startNow();
+      focusTerm();
+    }
   });
 
   input.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowUp') {
+    if (e.key === 'Escape') {
+      input.blur();
+    } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       hIdx = Math.max(0, hIdx - 1);
       input.value = history[hIdx] ?? '';
@@ -261,21 +432,21 @@ export function initTerminal(ctx: Ctx) {
       hIdx = Math.min(history.length, hIdx + 1);
       input.value = history[hIdx] ?? '';
     } else if (e.key === 'Tab') {
-      e.preventDefault();
       const v = input.value;
+      if (!v) return; // Tab vacío: deja salir el foco (accesibilidad)
+      e.preventDefault();
       const parts = v.split(' ');
-      if (parts.length === 1) {
-        const m = names.filter((n) => n.startsWith(v));
-        if (m.length === 1) input.value = `${m[0]} `;
+      const complete = (pool: string[], prefix: string, base: string) => {
+        const m = pool.filter((n) => n.startsWith(prefix));
+        if (m.length === 1) input.value = `${base}${m[0]}${base ? '' : ' '}`;
         else if (m.length > 1) print([dim(m.join('  '))]);
-      } else if (parts[0] === 'cat') {
-        const m = FILES.filter((f) => f.startsWith(parts[1] ?? ''));
-        if (m.length === 1) input.value = `cat ${m[0]}`;
-        else if (m.length > 1) print([dim(m.join('  '))]);
-      } else if (parts[0] === 'goto') {
-        const m = SECTIONS.filter((f) => f.startsWith(parts[1] ?? ''));
-        if (m.length === 1) input.value = `goto ${m[0]}`;
-      }
+      };
+      if (parts.length === 1) complete(names, v, '');
+      else if (parts[0] === 'cat') complete(FILES, parts[1] ?? '', 'cat ');
+      else if (parts[0] === 'goto') complete(SECTIONS, parts[1] ?? '', 'goto ');
+      else if (parts[0] === 'focus') complete(data.caps.map((c) => c.k), parts[1] ?? '', 'focus ');
+      else if (parts[0] === 'theme') complete(['light', 'dark'], parts[1] ?? '', 'theme ');
+      else if (parts[0] === 'lang') complete(['es', 'en'], parts[1] ?? '', 'lang ');
     } else if (e.key === 'l' && e.ctrlKey) {
       e.preventDefault();
       out.replaceChildren();
