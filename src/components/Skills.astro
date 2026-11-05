@@ -420,6 +420,78 @@ const evidence = (f: Front): Evidence[] => {
     white-space: normal;
   }
 
+  /* Teléfonos: frentes en una fila desplazable y herramientas como chips (sin pads). */
+  @media (max-width: 767.98px) {
+    .sk,
+    .sk-main {
+      gap: var(--space-m);
+    }
+    .fronts {
+      display: flex;
+      gap: var(--space-2xs);
+      margin-inline: calc(-1 * var(--gutter));
+      padding: 1px var(--gutter) 4px;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scroll-snap-type: x mandatory;
+      scroll-padding-inline: var(--gutter);
+      scrollbar-width: none;
+    }
+    .fronts::-webkit-scrollbar {
+      display: none;
+    }
+    .front {
+      flex: 0 0 auto;
+      min-width: 128px;
+      min-height: 56px;
+      padding: var(--space-2xs) var(--space-xs);
+      scroll-snap-align: start;
+    }
+    .where-body {
+      padding: var(--space-s);
+      gap: var(--space-s);
+    }
+    .groups {
+      gap: var(--space-m);
+    }
+    .group {
+      gap: var(--space-2xs);
+    }
+    .tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .tool,
+    .tool:last-child {
+      padding: 5px 8px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      font-size: var(--step--2);
+    }
+    .tool .pads {
+      display: none;
+    }
+    .sk[data-front='dev'] .tool[data-f~='dev'],
+    .sk[data-front='deploy'] .tool[data-f~='deploy'],
+    .sk[data-front='infra'] .tool[data-f~='infra'],
+    .sk[data-front='data'] .tool[data-f~='data'],
+    .sk[data-front='ai'] .tool[data-f~='ai'] {
+      border-color: color-mix(in srgb, var(--volt-ink) 55%, transparent);
+    }
+    .sheet {
+      gap: var(--space-l);
+      margin-top: var(--space-xl);
+      padding-top: var(--space-m);
+    }
+    .edu {
+      gap: var(--space-s);
+    }
+    .edu-n {
+      display: none;
+    }
+  }
+
   @media (min-width: 768px) {
     .fronts {
       grid-template-columns: repeat(3, minmax(0, 1fr));

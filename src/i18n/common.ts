@@ -43,6 +43,8 @@ const es = {
     copied: 'copiado',
     copyEmail: 'Copiar correo',
     backToTop: 'Volver arriba',
+    more: 'Ver más',
+    less: 'Ver menos',
   },
   footer: {
     line: 'Autoalojado. Sin trackers ni cookies de terceros.',
@@ -82,6 +84,8 @@ const en: Common = {
     copied: 'copied',
     copyEmail: 'Copy email',
     backToTop: 'Back to top',
+    more: 'Show more',
+    less: 'Show less',
   },
   footer: {
     line: 'Self-hosted. No trackers, no third-party cookies.',

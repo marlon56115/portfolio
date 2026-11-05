@@ -10,6 +10,7 @@ import { dict, careerStart } from '../i18n';
 import { currentYM, formatRange, jobDuration, monthsBetween, yearsSince } from '../lib/time';
 import { sectionIndex } from '../lib/sections';
 import SectionHead from './ui/SectionHead.astro';
+import Fold from './ui/Fold.astro';
 
 interface Props {
   lang: Lang;
@@ -122,7 +123,8 @@ const ch = (i: number) => String(i + 1).padStart(2, '0');
         {
           jobs.map((j, i) => (
             <article
-              class="jp"
+              class="jp spot"
+              data-spot
               role="tabpanel"
               id={`job-${j.id}`}
               aria-labelledby={`tab-${j.id}`}
@@ -166,12 +168,14 @@ const ch = (i: number) => String(i + 1).padStart(2, '0');
                 </dl>
               </header>
               <div class="jp-body">
-                <p class="label">{w.pointsLabel}</p>
-                <ul class="jp-points">
-                  {j.points.map((p) => (
-                    <li>{p}</li>
-                  ))}
-                </ul>
+                <Fold id={`job-${j.id}-more`} class="jp-more" off={!j.to} more={`${t.ui.more} · ${w.pointsLabel} (${j.points.length})`} less={t.ui.less}>
+                  <p class="label">{w.pointsLabel}</p>
+                  <ul class="jp-points">
+                    {j.points.map((p) => (
+                      <li>{p}</li>
+                    ))}
+                  </ul>
+                </Fold>
                 <p class="label">{w.stackLabel}</p>
                 <ul class="chip-list">
                   {j.stack.map((s) => (
@@ -505,6 +509,35 @@ const ch = (i: number) => String(i + 1).padStart(2, '0');
     background:
       linear-gradient(var(--volt-ink) 0 0) left center / 8px 1px no-repeat,
       radial-gradient(circle, var(--volt-ink) 0 2px, transparent 2.5px) right center / 6px 6px no-repeat;
+  }
+
+  :global(.jp-more) {
+    display: grid;
+    gap: var(--space-xs);
+  }
+
+  /* Teléfonos: filas de la traza más bajas y metadatos en una sola línea. */
+  @media (max-width: 767.98px) {
+    .la-row {
+      min-height: 48px;
+    }
+    .la-hint {
+      display: none;
+    }
+    .jp {
+      gap: var(--space-s);
+      padding-top: var(--space-s);
+    }
+    .jp-company {
+      font-size: var(--step-2);
+    }
+    .jp-meta {
+      grid-template-columns: repeat(3, minmax(0, auto));
+      justify-content: start;
+      gap: var(--space-xs) var(--space-m);
+      margin-top: var(--space-3xs);
+      padding-top: var(--space-xs);
+    }
   }
 
   @media (min-width: 768px) {

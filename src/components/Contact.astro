@@ -8,6 +8,7 @@ import type { Lang } from '../i18n';
 import { dict } from '../i18n';
 import { availability, timeZone } from '../i18n/contact';
 import { sectionIndex } from '../lib/sections';
+import Fold from './ui/Fold.astro';
 
 interface Props {
   lang: Lang;
@@ -146,7 +147,8 @@ const msgMax = 1500;
         </li>
       </ul>
 
-      <!-- Borrador: arma un mailto: con lo que escribas. Solo con JS. -->
+      <!-- Borrador: arma un mailto: con lo que escribas. Solo con JS. En teléfonos, plegado. -->
+      <Fold id="ct-compose" class="ct-compose-fold" more={c.composeOpen} less={t.ui.less}>
       <div class="panel ct-compose" data-js-only data-reveal>
         <div class="panel__bar">
           <span class="led led--ion" aria-hidden="true"></span>
@@ -210,6 +212,7 @@ const msgMax = 1500;
           </div>
         </form>
       </div>
+      </Fold>
     </div>
 
     <p class="ct-eot label" aria-hidden="true">
@@ -236,9 +239,6 @@ const msgMax = 1500;
     line-height: var(--lh-tight);
     text-wrap: balance;
     max-width: 16ch;
-  }
-  .ct-title__a {
-    color: var(--ink-2);
   }
   .ct-title__b {
     color: var(--volt-ink);
@@ -267,7 +267,7 @@ const msgMax = 1500;
   .ct-cards {
     grid-area: cards;
   }
-  .ct-compose {
+  .ct-grid > :global(.ct-compose-fold) {
     grid-area: compose;
   }
   @media (min-width: 1024px) {
@@ -506,8 +506,6 @@ const msgMax = 1500;
     }
   }
   .ct-card {
-    --px: 50%;
-    --py: 50%;
     --edge: var(--line);
     position: relative;
     isolation: isolate;
@@ -542,7 +540,7 @@ const msgMax = 1500;
     inset: 1px;
     z-index: -1;
     background:
-      radial-gradient(260px circle at var(--px) var(--py), var(--ion-soft), transparent 70%),
+      radial-gradient(260px circle at var(--fx-sx, 50%) var(--fx-sy, 50%), var(--ion-soft), transparent 70%),
       var(--surface);
   }
   .ct-card:hover,
@@ -801,4 +799,55 @@ const msgMax = 1500;
       grid-row: span 2;
     }
   }
+  /* Teléfonos: cabecera y bloques más juntos; perfiles en dos columnas, sin nota. */
+  @media (max-width: 767.98px) {
+    .ct-head {
+      gap: var(--space-s);
+      margin-bottom: var(--space-l);
+    }
+    .ct-title {
+      font-size: var(--step-4);
+    }
+    .ct-lead {
+      font-size: var(--step-0);
+    }
+    .ct-grid {
+      gap: var(--space-s);
+    }
+    .ct-actions .btn {
+      min-height: 48px;
+    }
+    .ct-status__body {
+      gap: var(--space-s);
+      padding: var(--space-s);
+    }
+    .ct-fact {
+      padding-block: var(--space-2xs);
+    }
+    .ct-cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-2xs);
+    }
+    .ct-card {
+      grid-template-areas:
+        'icon go'
+        'name name'
+        'handle handle';
+      grid-template-columns: auto minmax(0, 1fr);
+      row-gap: 4px;
+      padding: var(--space-s);
+    }
+    .ct-card__note {
+      display: none;
+    }
+    .ct-card__handle {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .ct-eot {
+      margin-top: var(--space-l);
+    }
+  }
+
 </style>

@@ -1,0 +1,20 @@
+---
+// Pliegue solo para móvil (< 768 px, con JS): el contenido se oculta tras un botón "ver más".
+// En escritorio y sin JS se ve todo y el botón no aparece. Estilos en components.css (.m-fold),
+// comportamiento en src/scripts/core/fold.ts.
+// Uso: <Fold id="job-1-more" more="Ver logros (3)" less="Ver menos">…</Fold>
+interface Props {
+  id: string;
+  more: string;
+  less: string;
+  class?: string;
+  off?: boolean; // true: sin pliegue (el contenido se ve siempre)
+}
+const { id, more, less, class: cls, off = false } = Astro.props;
+---
+
+{off ? <div class={cls}><slot /></div> : <><div class:list={['m-fold', cls]} id={id}><slot /></div>
+<button class="m-fold__btn" type="button" aria-expanded="false" aria-controls={id} data-fold-btn data-more={more} data-less={less} data-js-only>
+  <span data-fold-label>{more}</span>
+  <span class="m-fold__i" aria-hidden="true"></span>
+</button></>}

@@ -9,12 +9,14 @@ import type { Lang } from '../i18n';
 import { dict } from '../i18n';
 import { sectionIndex } from '../lib/sections';
 import SectionHead from './ui/SectionHead.astro';
+import Fold from './ui/Fold.astro';
 
 interface Props {
   lang: Lang;
 }
 const { lang } = Astro.props;
-const s = dict[lang].system;
+const t = dict[lang];
+const s = t.system;
 const L = s.live;
 const n2 = (i: number) => String(i + 1).padStart(2, '0');
 
@@ -96,6 +98,7 @@ const flows = [
       <div class="flows">
         {
           flows.map((f) => (
+            <Fold id={`flow-${f.key}-fold`} off={f.key === 'path'} more={`${t.ui.more} · ${f.data.title}`} less={t.ui.less}>
             <figure class={`flow flow--${f.key}`} data-flow={f.key} data-reveal aria-labelledby={`flow-${f.key}-t`}>
               <figcaption class="flow-head">
                 <h3 class="flow-t" id={`flow-${f.key}-t`}>
@@ -152,6 +155,7 @@ const flows = [
                 ))}
               </div>
             </figure>
+            </Fold>
           ))
         }
       </div>
@@ -409,11 +413,6 @@ const flows = [
     letter-spacing: 0;
     color: var(--volt-ink);
   }
-  .flow-lead {
-    font-family: var(--font-mono);
-    font-size: var(--step--2);
-    color: var(--muted);
-  }
 
   /* ---- etapas: vertical por defecto (teléfono), horizontal si el contenedor da ---- */
   .stages {
@@ -544,6 +543,58 @@ const flows = [
     .wire {
       align-self: center;
       width: auto;
+      height: 7px;
+      margin: 0;
+    }
+    .wire::before {
+      left: 0;
+      right: 0;
+      top: 3px;
+      bottom: auto;
+      width: auto;
+      height: 1px;
+    }
+    .wire i {
+      --travel: translateX(calc(var(--wire-len) - 7px));
+    }
+  }
+
+  /* Teléfonos: etapas en una fila desplazable con scroll-snap, cables horizontales. */
+  @media (max-width: 767.98px) {
+    .stages {
+      --wire-len: 14px;
+      grid-template-columns: none;
+      grid-auto-flow: column;
+      grid-auto-columns: auto;
+      margin-inline: calc(-1 * var(--gutter));
+      padding: 1px var(--gutter) 4px;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scroll-snap-type: x mandatory;
+      scroll-padding-inline: var(--gutter);
+      scrollbar-width: none;
+    }
+    .stages::-webkit-scrollbar {
+      display: none;
+    }
+    .stage {
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-rows: auto auto;
+      column-gap: var(--space-2xs);
+      row-gap: 0;
+      width: 132px;
+      min-height: 56px;
+      padding: var(--space-2xs) var(--space-xs);
+      scroll-snap-align: start;
+    }
+    .stage-m {
+      grid-column: 1 / -1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .wire {
+      align-self: center;
+      width: var(--wire-len);
       height: 7px;
       margin: 0;
     }
@@ -700,6 +751,47 @@ const flows = [
     margin-top: var(--space-xl);
     padding-top: var(--space-m);
     border-top: 1px solid var(--line);
+  }
+
+  /* Teléfonos: panel en vivo resumido (sin notas ni sparkline alta) y bloques más juntos. */
+  @media (max-width: 767.98px) {
+    .sys-grid {
+      gap: var(--space-l);
+      margin-top: var(--space-m);
+    }
+    .metric {
+      padding: var(--space-xs) var(--space-s);
+    }
+    .metric--cpu {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+      align-items: end;
+    }
+    .metric-n {
+      display: none;
+    }
+    .metric-v {
+      font-size: 24px;
+    }
+    .spark {
+      height: 40px;
+    }
+    .live-foot {
+      padding-block: var(--space-2xs);
+    }
+    .flows {
+      gap: var(--space-l);
+    }
+    .flow-head {
+      margin-bottom: var(--space-xs);
+    }
+    .readout {
+      gap: var(--space-xs);
+      padding-block: var(--space-xs);
+    }
+    .toolbox {
+      margin-top: var(--space-l);
+      padding-top: var(--space-s);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
