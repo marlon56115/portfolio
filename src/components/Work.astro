@@ -49,7 +49,7 @@ const ch = (i: number) => String(i + 1).padStart(2, '0');
           <span class="led is-pulse"></span>
           <span class="panel__title">{w.traceTitle}</span>
           <span class="la-stat mono">
-            {jobs.length} {w.channels} · <span data-since={careerStart}>{yearsSince(careerStart)}</span>
+            {jobs.length} {w.channels} · <span data-since={careerStart}>{yearsSince(careerStart)}</span>{" "}
             {w.yearsLabel}
           </span>
         </div>

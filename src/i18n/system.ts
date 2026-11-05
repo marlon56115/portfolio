@@ -56,7 +56,7 @@ const es = {
     },
     toolbox: {
       title: 'Caja de herramientas',
-      items: ['Kubernetes', 'Docker', 'GitOps', 'IaC · OpenTofu · Ansible', 'Observabilidad · Prometheus · Grafana', 'Cloudflare (borde)', 'Go', 'CI/CD'],
+      items: ['Kubernetes', 'Docker', 'GitOps', 'IaC · OpenTofu · Ansible', 'Observabilidad · Prometheus · Grafana', 'Go', 'CI/CD'],
     },
   },
 };
@@ -114,7 +114,7 @@ const en: System = {
     },
     toolbox: {
       title: 'Toolbox',
-      items: ['Kubernetes', 'Docker', 'GitOps', 'IaC · OpenTofu · Ansible', 'Observability · Prometheus · Grafana', 'Cloudflare (edge)', 'Go', 'CI/CD'],
+      items: ['Kubernetes', 'Docker', 'GitOps', 'IaC · OpenTofu · Ansible', 'Observability · Prometheus · Grafana', 'Go', 'CI/CD'],
     },
   },
 };

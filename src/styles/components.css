@@ -71,6 +71,10 @@
   line-height: 1.05;
   max-width: 22ch;
 }
+.section-head > div {
+  display: grid;
+  gap: var(--space-s);
+}
 .section-lead {
   max-width: var(--w-text);
   color: var(--ink-2);
@@ -85,10 +89,6 @@
   }
   .section-index {
     padding-top: 0.9em;
-  }
-  .section-head > div {
-    display: grid;
-    gap: var(--space-s);
   }
 }
 
@@ -207,6 +207,12 @@
 }
 .icon-btn:hover {
   color: var(--ink);
+}
+@media (pointer: coarse) {
+  .icon-btn {
+    width: 44px;
+    height: 44px;
+  }
 }
 .icon-btn:hover::before {
   background: var(--ion);
