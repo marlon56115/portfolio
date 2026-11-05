@@ -27,6 +27,14 @@ export interface Status {
   netRxBps?: number;
   /** @deprecated ver memoryTotalBytes */
   netTxBps?: number;
+  /** @deprecated ver memoryTotalBytes */
+  pods?: number;
+  /** @deprecated ver memoryTotalBytes */
+  namespaces?: number;
+  /** @deprecated ver memoryTotalBytes */
+  k8s?: string;
+  /** @deprecated ver memoryTotalBytes */
+  os?: string;
 }
 
 type Listener = (s: Status | null) => void;
