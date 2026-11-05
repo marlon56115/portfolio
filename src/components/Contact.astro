@@ -28,7 +28,7 @@ const msgMax = 1500;
     <header class="ct-head" data-reveal>
       <p class="section-index"><b>{idx}</b> / {c.label}</p>
       <h2 class="ct-title" id="contact-title">
-        <span class="ct-title__a">{c.titleA}</span>
+        <span class="ct-title__a">{c.titleA}</span>{' '}
         <span class="ct-title__b">{c.titleB}</span>
       </h2>
       <p class="ct-lead">{c.lead}</p>
@@ -299,12 +299,15 @@ const msgMax = 1500;
     align-items: center;
     gap: var(--space-2xs);
   }
-  /* La dirección ocupa el ancho del bloque: 21 caracteres mono ≈ 12.6em. */
+  /* La dirección ocupa el ancho del bloque: 21 caracteres mono ≈ 12.2em → 8cqi. */
   .ct-addr {
     justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
     max-width: 100%;
     font-family: var(--font-mono);
-    font-size: clamp(1.125rem, 7.1cqi, 3.25rem);
+    font-size: clamp(1.125rem, 8cqi, 3.25rem);
     font-weight: 500;
     letter-spacing: -0.02em;
     line-height: 1.15;
@@ -794,7 +797,8 @@ const msgMax = 1500;
       column-gap: var(--space-xl);
     }
     .ct-head .section-index {
-      padding-top: 1.2em;
+      align-self: start;
+      padding-top: 1.6em;
       grid-row: span 2;
     }
   }

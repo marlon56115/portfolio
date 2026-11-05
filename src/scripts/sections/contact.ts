@@ -267,7 +267,8 @@ function initCompose(root: HTMLElement): void {
 
     const topic = (form.elements.namedItem('topic') as RadioNodeList | null)?.value ?? '';
     const who = name.value.trim().slice(0, name.maxLength);
-    const body = `${msg.value.trim().slice(0, msg.maxLength)}\r\n\r\n— ${who}`;
+    const text = msg.value.trim().slice(0, msg.maxLength).replace(/\r?\n/g, '\r\n');
+    const body = `${text}\r\n\r\n— ${who}`;
     const subject = topic ? `${topic} · ${who}` : who;
     const to = form.dataset.to ?? '';
     const url = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
