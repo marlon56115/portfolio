@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/marlon56115/portfolio
-  tag: "0.2.0" # lo fija el repositorio de despliegue
+  tag: "0.3.0" # lo fija el repositorio de despliegue
   pullPolicy: IfNotPresent
 
 replicaCount: 1
