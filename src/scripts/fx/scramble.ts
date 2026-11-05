@@ -22,23 +22,46 @@ function prepare(host: HTMLElement): HTMLSpanElement | null {
   return shown;
 }
 
-function run(shown: HTMLSpanElement, text: string, state: { raf: number }) {
-  cancelAnimationFrame(state.raf);
+export interface ScrambleOpts {
+  glyphs?: string;
+  duration?: number;
+  /** Caracteres que no se cifran (por defecto, solo el espacio). */
+  keep?: (ch: string) => boolean;
+}
+
+/**
+ * Descifra `text` letra a letra llamando a `write` en cada cuadro. Reutilizable desde otros efectos
+ * (fx/decode.ts). Devuelve una función que corta la animación y deja el texto final.
+ */
+export function scrambleTo(write: (s: string) => void, text: string, opts: ScrambleOpts = {}): () => void {
+  const glyphs = opts.glyphs ?? GLYPHS;
+  const dur = opts.duration ?? DURATION;
+  const keep = opts.keep ?? ((ch: string) => ch === ' ');
   const start = performance.now();
   // Cada letra se "fija" en un momento aleatorio dentro de la duración.
-  const lock = Array.from(text, (_, i) => (i / text.length) * DURATION * 0.7 + Math.random() * DURATION * 0.3);
+  const lock = Array.from(text, (_, i) => (i / text.length) * dur * 0.7 + Math.random() * dur * 0.3);
+  let raf = 0;
   const frame = (now: number) => {
     const t = now - start;
     let out = '';
     for (let i = 0; i < text.length; i++) {
       const ch = text[i] ?? '';
-      out += t >= (lock[i] ?? 0) || ch === ' ' ? ch : (GLYPHS[(Math.random() * GLYPHS.length) | 0] ?? ch);
+      out += t >= (lock[i] ?? 0) || keep(ch) ? ch : (glyphs[(Math.random() * glyphs.length) | 0] ?? ch);
     }
-    shown.textContent = out;
-    if (t < DURATION) state.raf = requestAnimationFrame(frame);
-    else shown.textContent = text;
+    write(out);
+    if (t < dur) raf = requestAnimationFrame(frame);
+    else write(text);
   };
-  state.raf = requestAnimationFrame(frame);
+  raf = requestAnimationFrame(frame);
+  return () => {
+    cancelAnimationFrame(raf);
+    write(text);
+  };
+}
+
+function run(shown: HTMLSpanElement, text: string, state: { stop: () => void }) {
+  state.stop();
+  state.stop = scrambleTo((s) => (shown.textContent = s), text);
 }
 
 export function initScramble(root: ParentNode = document): void {
@@ -48,7 +71,7 @@ export function initScramble(root: ParentNode = document): void {
     if (!shown) return;
     const text = host.dataset.scrambleText ?? '';
     const trigger = host.closest<HTMLElement>('a, button') ?? host;
-    const state = { raf: 0 };
+    const state = { stop: () => {} };
     const go = () => {
       if (!reducedMotion.matches) run(shown, text, state);
     };

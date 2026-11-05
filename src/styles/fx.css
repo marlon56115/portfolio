@@ -150,3 +150,48 @@
     display: none;
   }
 }
+
+/* ---------- foco de luz en paneles (fx/spotlight.ts; solo puntero fino) ---------- */
+/* Reutiliza los pseudos del panel (components.css): ::before es el filete, ::after la superficie.
+   Solo se añade background-image, así el color de fondo de cada panel sigue mandando.
+   --fx-a se registra para que el halo entre y salga con transición. */
+@property --fx-a {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .panel::before,
+  .panel::after {
+    transition: --fx-a var(--dur-3) var(--ease-out);
+  }
+  .panel::before {
+    background-image: radial-gradient(
+      200px circle at var(--fx-sx, 50%) var(--fx-sy, 50%),
+      color-mix(in srgb, var(--ion) calc(var(--fx-a) * 70%), transparent),
+      transparent 75%
+    );
+  }
+  .panel::after {
+    background-image: radial-gradient(
+      340px circle at var(--fx-sx, 50%) var(--fx-sy, 50%),
+      color-mix(in srgb, var(--ion-soft) calc(var(--fx-a) * 100%), transparent),
+      transparent 70%
+    );
+  }
+  .panel.fx-spot::before,
+  .panel.fx-spot::after {
+    --fx-a: 1;
+  }
+}
+
+/* ---------- cambio de tema con barrido circular (fx/theme-wipe.ts) ---------- */
+/* El JS anima el clip-path de la vista nueva; aquí se quita el fundido por defecto. */
+:root.fx-wipe::view-transition-old(root),
+:root.fx-wipe::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+:root.fx-wipe::view-transition-new(root) {
+  z-index: 1;
+}
