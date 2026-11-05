@@ -1,0 +1,193 @@
+---
+// Visual de la plataforma propia: secuencia abstracta "reproducible desde git".
+// Muestra rigor sin detalles de infraestructura (regla de privacidad, DESIGN.md §7).
+// Sin JS todo aparece encendido; con JS las capas se encienden en orden al entrar en pantalla
+// y el botón "Reconstruir" repite la secuencia (src/scripts/projects/stack.ts).
+interface Props {
+  title: string;
+  run: string;
+  done: string;
+  layers: string[][];
+  facts: string[][];
+}
+const { title, run, done, layers, facts } = Astro.props;
+---
+
+<div class="panel panel--raised stack" data-stack>
+  <div class="panel__bar">
+    <span class="led led--volt" data-stack-led></span>
+    <span class="panel__title">{title}</span>
+    <span class="stack-branch mono">main</span>
+  </div>
+  <div class="panel__body stack-body">
+    <ol class="layers">
+      {
+        layers.map(([name, desc], i) => (
+          <li class="layer" data-layer={i}>
+            <span class="pad" aria-hidden="true" />
+            <span class="l-text">
+              <span class="l-name">{name}</span>
+              <span class="l-desc">{desc}</span>
+            </span>
+            <span class="l-ok mono" aria-hidden="true">
+              ok
+            </span>
+          </li>
+        ))
+      }
+    </ol>
+    <p class="stack-done mono"><span aria-hidden="true">✓</span> {done}</p>
+    <dl class="facts">
+      {
+        facts.map(([n, l]) => (
+          <div>
+            <dt class="label">{l}</dt>
+            <dd class="fact-n">{n}</dd>
+          </div>
+        ))
+      }
+    </dl>
+    <button type="button" class="btn btn--ghost stack-run" data-stack-run data-js-only>
+      <span class="btn__icon" aria-hidden="true">↻</span>
+      {run}
+    </button>
+  </div>
+</div>
+
+<style>
+  .stack-branch {
+    font-size: var(--step--2);
+    color: var(--ok);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .stack-body {
+    display: grid;
+    gap: var(--space-m);
+  }
+  .layers {
+    --step-ms: 170ms;
+    position: relative;
+    list-style: none;
+    display: grid;
+    gap: 0;
+  }
+  /* Bus vertical que une los pads; el relleno "baja" como una señal. */
+  .layers::before,
+  .layers::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 18px;
+    bottom: 18px;
+    width: 1px;
+    background: var(--line-strong);
+  }
+  .layers::after {
+    background: var(--volt-ink);
+    transform-origin: top;
+    transition: transform calc(var(--step-ms) * 7) linear;
+  }
+  .layer {
+    position: relative;
+    display: grid;
+    grid-template-columns: 11px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-s);
+    padding: 9px 0;
+    border-bottom: 1px dashed var(--line);
+  }
+  .layer:last-child {
+    border-bottom: 0;
+  }
+  .pad {
+    position: relative;
+    z-index: 1;
+    width: 11px;
+    height: 11px;
+    border: 1px solid var(--volt-ink);
+    background: var(--volt-ink);
+    transition:
+      background-color var(--dur-2) var(--ease-out),
+      box-shadow var(--dur-2) var(--ease-out);
+    transition-delay: calc(var(--i, 0) * var(--step-ms));
+    box-shadow: 0 0 0 3px var(--volt-soft);
+  }
+  .l-text {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+  }
+  .l-name {
+    font-family: var(--font-display);
+    font-size: var(--step--1);
+    font-stretch: 87.5%;
+    font-weight: 500;
+    color: var(--ink);
+    transition: color var(--dur-2) var(--ease-out);
+    transition-delay: calc(var(--i, 0) * var(--step-ms));
+  }
+  .l-desc {
+    font-size: var(--step--1);
+    color: var(--ink-2);
+    line-height: 1.45;
+  }
+  .l-ok {
+    font-size: var(--step--2);
+    color: var(--ok);
+    transition: opacity var(--dur-2) var(--ease-out);
+    transition-delay: calc(var(--i, 0) * var(--step-ms) + 80ms);
+  }
+  .stack-done {
+    font-size: var(--step--2);
+    color: var(--ok);
+    transition: opacity var(--dur-3) var(--ease-out);
+    transition-delay: calc(var(--step-ms) * 7.5);
+  }
+
+  /* Estado "apagado" solo con JS, antes de correr la secuencia. */
+  :global(.js) .stack:not(.is-run) .pad {
+    background: var(--surface);
+    border-color: var(--line-strong);
+    box-shadow: none;
+    transition-delay: 0s;
+  }
+  :global(.js) .stack:not(.is-run) .l-name {
+    color: var(--muted);
+    transition-delay: 0s;
+  }
+  :global(.js) .stack:not(.is-run) .l-ok,
+  :global(.js) .stack:not(.is-run) .stack-done {
+    opacity: 0;
+    transition-delay: 0s;
+  }
+  :global(.js) .stack:not(.is-run) .layers::after {
+    transform: scaleY(0);
+    transition-duration: 0s;
+  }
+
+  .facts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-xs);
+    padding-top: var(--space-s);
+    border-top: 1px solid var(--line);
+  }
+  .facts > div {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 2px;
+  }
+  .fact-n {
+    font-family: var(--font-display);
+    font-size: var(--step-3);
+    font-weight: 600;
+    font-stretch: 75%;
+    letter-spacing: var(--track-display);
+    line-height: 1;
+    color: var(--volt-ink);
+  }
+  .stack-run {
+    justify-self: start;
+  }
+</style>

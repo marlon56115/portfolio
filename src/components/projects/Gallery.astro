@@ -1,0 +1,389 @@
+---
+// Galería de capturas en un marco de navegador.
+// - Diapositivas en una pista con scroll-snap: se desliza con el dedo sin JS.
+// - Con JS: miniaturas, anterior/siguiente, contador y lightbox (src/scripts/projects/gallery.ts).
+// - Sin JS: cada captura es un enlace a la imagen grande.
+// - Si una diapositiva tiene variante oscura, se muestra con el tema oscuro (CSS, sin JS).
+// Todas las capturas usan datos de demostración.
+import { Image, getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+export interface Shot {
+  img: ImageMetadata;
+  dark?: ImageMetadata;
+  phone?: boolean;
+  caption: string;
+}
+interface Props {
+  name: string;
+  host: string;
+  demo: string;
+  shots: Shot[];
+  ui: { gallery: string; prev: string; next: string; open: string; of: string; mobile: string; swipe: string };
+}
+const { name, host, demo, shots, ui } = Astro.props;
+
+const full = async (img: ImageMetadata, phone?: boolean) =>
+  (await getImage({ src: img, width: phone ? Math.min(img.width, 900) : 1920, format: 'webp', quality: 82 })).src;
+
+const slides = await Promise.all(
+  shots.map(async (s) => ({
+    ...s,
+    full: await full(s.img, s.phone),
+    fullDark: s.dark ? await full(s.dark) : '',
+  })),
+);
+const n = slides.length;
+---
+
+<div class="gallery" data-gallery role="region" aria-roledescription="carousel" aria-label={`${ui.gallery} ${name}`}>
+  <div class="browser">
+    <p class="browser-bar" aria-hidden="true">
+      <span class="dots"><i></i><i></i><i></i></span>
+      <span class="url mono">{host} · {demo}</span>
+      <span class="count mono" data-js-only><span data-count>1</span>/{n}</span>
+    </p>
+    <ul class="track" data-track tabindex="-1">
+      {
+        slides.map((s, i) => (
+          <li
+            class:list={['slide', { 'slide--phone': s.phone }]}
+            data-slide={i}
+            role="group"
+            aria-roledescription="slide"
+            aria-label={`${i + 1} ${ui.of} ${n}`}
+          >
+            <figure>
+              <a
+                class="shot"
+                href={s.full}
+                data-open={i}
+                data-full={s.full}
+                data-full-dark={s.fullDark || undefined}
+                data-phone={s.phone ? '' : undefined}
+                data-caption={s.caption}
+                tabindex={i === 0 ? undefined : -1}
+              >
+                <span class="visually-hidden">
+                  {ui.open}: {s.caption}
+                </span>
+                {s.phone ? (
+                  <span class="phone">
+                    <Image src={s.img} alt={s.caption} widths={[240, 360, 480]} sizes="(min-width: 768px) 220px, 42vw" quality={80} format="webp" loading="lazy" />
+                  </span>
+                ) : (
+                  <>
+                    <Image
+                      class:list={['shot-img', { 'when-light': !!s.dark }]}
+                      src={s.img}
+                      alt={s.caption}
+                      widths={[480, 720, 960, 1280]}
+                      sizes="(min-width: 1200px) 660px, (min-width: 1024px) 56vw, calc(100vw - 34px)"
+                      quality={80}
+                      format="webp"
+                      loading={i === 0 ? 'eager' : 'lazy'}
+                    />
+                    {s.dark && (
+                      <Image
+                        class="shot-img when-dark"
+                        src={s.dark}
+                        alt={s.caption}
+                        widths={[480, 720, 960, 1280]}
+                        sizes="(min-width: 1200px) 660px, (min-width: 1024px) 56vw, calc(100vw - 34px)"
+                        quality={80}
+                        format="webp"
+                        loading={i === 0 ? 'eager' : 'lazy'}
+                      />
+                    )}
+                  </>
+                )}
+                <span class="zoom" aria-hidden="true">⤢</span>
+              </a>
+            </figure>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+
+  <div class="g-foot">
+    <p class="caption" aria-live="polite" data-caption-out>{slides[0].caption}</p>
+    <p class="swipe mono" aria-hidden="true">← {ui.swipe} →</p>
+  </div>
+
+  <div class="g-controls" data-js-only>
+    <button type="button" class="g-nav" data-prev aria-label={ui.prev}><span aria-hidden="true">←</span></button>
+    <div class="thumbs">
+      {
+        slides.map((s, i) => (
+          <button
+            type="button"
+            class:list={['thumb', { 'thumb--phone': s.phone }]}
+            data-thumb={i}
+            aria-label={`${i + 1} ${ui.of} ${n}: ${s.caption}`}
+            aria-current={i === 0 ? 'true' : undefined}
+          >
+            <Image class:list={[{ 'when-light': !!s.dark }]} src={s.img} alt="" widths={[160, 240]} sizes="80px" quality={60} format="webp" loading="lazy" />
+            {s.dark && <Image class="when-dark" src={s.dark} alt="" widths={[160, 240]} sizes="80px" quality={60} format="webp" loading="lazy" />}
+          </button>
+        ))
+      }
+    </div>
+    <button type="button" class="g-nav" data-next aria-label={ui.next}><span aria-hidden="true">→</span></button>
+  </div>
+</div>
+
+<style>
+  .gallery {
+    display: grid;
+    gap: var(--space-xs);
+    min-width: 0;
+  }
+  .browser {
+    position: relative;
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    box-shadow: var(--shadow-2);
+    overflow: hidden;
+  }
+  .browser-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    height: 34px;
+    padding: 0 var(--space-xs);
+    border-bottom: 1px solid var(--line);
+    background: var(--surface-2);
+    color: var(--muted);
+  }
+  .dots {
+    display: inline-flex;
+    gap: 5px;
+  }
+  .dots i {
+    width: 7px;
+    height: 7px;
+    background: var(--line-strong);
+  }
+  .dots i:first-child {
+    background: var(--volt-ink);
+  }
+  .url {
+    flex: 1;
+    min-width: 0;
+    max-width: 300px;
+    padding: 2px 10px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .count {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--ion-ink);
+  }
+
+  .track {
+    display: flex;
+    list-style: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    outline: none;
+  }
+  .track::-webkit-scrollbar {
+    display: none;
+  }
+  .slide {
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+  }
+  .slide figure,
+  .shot {
+    display: block;
+    position: relative;
+    height: 100%;
+  }
+  .shot {
+    cursor: zoom-in;
+  }
+  .shot:focus-visible {
+    outline-offset: -3px;
+  }
+  .shot :global(.shot-img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top left;
+  }
+  .zoom {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    background: color-mix(in srgb, var(--bg) 80%, transparent);
+    border: 1px solid var(--line-strong);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    opacity: 0;
+    transition: opacity var(--dur-1) var(--ease-out);
+  }
+  .shot:hover .zoom,
+  .shot:focus-visible .zoom {
+    opacity: 1;
+  }
+  .slide--phone {
+    display: grid;
+    background-image: radial-gradient(var(--fx-dot) 1px, transparent 1.2px);
+    background-size: var(--cell) var(--cell);
+  }
+  .slide--phone .shot {
+    display: grid;
+    place-items: center;
+    padding: 4% 0;
+  }
+  .phone {
+    display: block;
+    height: 100%;
+    aspect-ratio: 780 / 1688;
+    padding: 5px;
+    border: 1px solid var(--line-strong);
+    border-radius: 18px;
+    background: var(--term-bg);
+    box-shadow: var(--shadow-2);
+    overflow: hidden;
+  }
+  .phone :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top;
+    border-radius: 13px;
+  }
+
+  /* Variante oscura: oscuro por defecto; claro por sistema o por elección. */
+  .gallery :global(.when-light) {
+    display: none;
+  }
+  @media (prefers-color-scheme: light) {
+    :global(:root:not([data-theme='dark'])) .gallery :global(.when-light) {
+      display: block;
+    }
+    :global(:root:not([data-theme='dark'])) .gallery :global(.when-dark) {
+      display: none;
+    }
+  }
+  :global(:root[data-theme='light']) .gallery :global(.when-light) {
+    display: block;
+  }
+  :global(:root[data-theme='light']) .gallery :global(.when-dark) {
+    display: none;
+  }
+
+  .g-foot {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-s);
+    align-items: baseline;
+  }
+  .caption {
+    font-size: var(--step--1);
+    color: var(--ink-2);
+    min-height: 1.6em;
+  }
+  .swipe {
+    font-size: var(--step--2);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  :global(.js) .caption ~ .swipe {
+    display: none;
+  }
+
+  .g-controls {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    gap: var(--space-2xs);
+    align-items: center;
+  }
+  .g-nav {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: 16px;
+    cursor: pointer;
+    transition:
+      border-color var(--dur-1) var(--ease-out),
+      color var(--dur-1) var(--ease-out);
+  }
+  .g-nav:hover:not(:disabled) {
+    border-color: var(--ion);
+    color: var(--ion-ink);
+  }
+  .g-nav:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  .thumbs {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    min-width: 0;
+  }
+  .thumb {
+    position: relative;
+    flex: 0 1 80px;
+    min-width: 0;
+    height: 48px;
+    padding: 0;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    cursor: pointer;
+    overflow: hidden;
+    opacity: 0.55;
+    transition:
+      opacity var(--dur-1) var(--ease-out),
+      border-color var(--dur-1) var(--ease-out);
+  }
+  .thumb :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top left;
+  }
+  .thumb--phone :global(img) {
+    object-position: top center;
+  }
+  .thumb:hover {
+    opacity: 0.9;
+  }
+  .thumb[aria-current='true'] {
+    opacity: 1;
+    border-color: var(--volt-ink);
+  }
+  .thumb[aria-current='true']::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background: var(--volt-ink);
+  }
+</style>

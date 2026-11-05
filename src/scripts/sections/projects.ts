@@ -1,17 +1,10 @@
-// Proyectos: galerías de capturas con miniaturas. Dueño en la fase 2: pf-work.
+// Proyectos: galerías con lightbox y la secuencia de capas de la plataforma. Dueño en la fase 2: pf-work.
 
-import { $$ } from '../../lib/dom';
+import { safe } from '../../lib/dom';
+import { initGalleries } from '../work/gallery';
+import { initStack } from '../work/stack';
 
 export function initProjects(): void {
-  $$('[data-gallery]').forEach((g) => {
-    const screens = $$<HTMLImageElement>('[data-screen]', g);
-    const thumbs = $$<HTMLButtonElement>('[data-thumb]', g);
-    thumbs.forEach((b) =>
-      b.addEventListener('click', () => {
-        const i = b.dataset.thumb;
-        screens.forEach((s) => (s.hidden = s.dataset.screen !== i));
-        thumbs.forEach((t) => t.setAttribute('aria-pressed', String(t === b)));
-      }),
-    );
-  });
+  safe('projects:gallery', initGalleries);
+  safe('projects:stack', initStack);
 }

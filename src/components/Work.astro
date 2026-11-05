@@ -1,7 +1,13 @@
 ---
+// Experiencia como un analizador lógico: un canal por puesto sobre un eje de tiempo real
+// (desde el inicio de la carrera hasta hoy). El canal está "alto" mientras duró el puesto; el actual
+// sigue alto hasta el borde "hoy". Cada canal es una pestaña (patrón ARIA tabs) que abre su detalle.
+// Sin JS: se ven la traza y todos los detalles, uno tras otro.
+// Las posiciones van en atributos SVG con porcentajes (sin style=""); el cliente las recalcula con la
+// fecha de hoy (src/scripts/work/trace.ts), igual que las duraciones (data-since).
 import type { Lang } from '../i18n';
-import { dict } from '../i18n';
-import { formatRange, jobDuration } from '../lib/time';
+import { dict, careerStart } from '../i18n';
+import { currentYM, formatRange, jobDuration, monthsBetween, yearsSince } from '../lib/time';
 import { sectionIndex } from '../lib/sections';
 import SectionHead from './ui/SectionHead.astro';
 
@@ -11,34 +17,139 @@ interface Props {
 const { lang } = Astro.props;
 const t = dict[lang];
 const w = t.work;
+const jobs = t.jobs;
 
 const range = (from: string, to: string | null) => formatRange(from, to, lang, w.present);
+
+// Eje: del mes de inicio al mes actual, ambos incluidos.
+const now = currentYM();
+const total = monthsBetween(careerStart, now) + 1;
+const pct = (n: number) => `${Math.min(100, Math.max(0, (n / total) * 100)).toFixed(3)}%`;
+const xFrom = (from: string) => pct(monthsBetween(careerStart, from));
+const xTo = (to: string | null) => (to ? pct(monthsBetween(careerStart, to) + 1) : '100%');
+const xWidth = (from: string, to: string | null) =>
+  pct((to ? monthsBetween(careerStart, to) + 1 : total) - monthsBetween(careerStart, from));
+
+// Marcas de año: enero de cada año dentro del eje.
+const startYear = Number(careerStart.slice(0, 4));
+const endYear = Number(now.slice(0, 4));
+const years: { y: number; x: string }[] = [];
+for (let y = startYear + 1; y <= endYear; y++) years.push({ y, x: pct(monthsBetween(careerStart, `${y}-01`)) });
+
+const ch = (i: number) => String(i + 1).padStart(2, '0');
 ---
 
 <section class="section" id="work">
   <div class="wrap">
     <SectionHead index={sectionIndex('work')} label={w.label} title={w.title} lead={w.lead} />
 
-    <div class="log">
-      <p class="cmd mono" aria-hidden="true"><span>$</span> git log --graph --oneline career</p>
-      <ol class="commits">
+    <div class="la" data-trace data-start={careerStart}>
+      <div class="panel la-scope reg" data-reveal>
+        <div class="panel__bar">
+          <span class="led is-pulse"></span>
+          <span class="panel__title">{w.traceTitle}</span>
+          <span class="la-stat mono">
+            {jobs.length} {w.channels} · <span data-since={careerStart}>{yearsSince(careerStart)}</span>
+            {w.yearsLabel}
+          </span>
+        </div>
+
+        <div class="la-grid">
+          <!-- regla de años -->
+          <div class="la-ruler" aria-hidden="true">
+            <span class="la-ruler__lead mono">t</span>
+            <svg class="la-ruler__svg" data-ruler>
+              {
+                years.map((yr) => (
+                  <g data-year-tick={yr.y}>
+                    <line x1={yr.x} x2={yr.x} y1="14" y2="22" />
+                    <text x={yr.x} y="10">
+                      {yr.y}
+                    </text>
+                  </g>
+                ))
+              }
+              <text class="la-now-txt" x="100%" y="10">{w.now}</text>
+            </svg>
+          </div>
+
+          <div class="la-rows" role="tablist" aria-label={w.tabs} aria-orientation="vertical" data-tablist>
+            {
+              jobs.map((j, i) => (
+                <button
+                  type="button"
+                  class:list={['la-row', { 'is-live': !j.to }]}
+                  role="tab"
+                  id={`tab-${j.id}`}
+                  aria-controls={`job-${j.id}`}
+                  aria-selected={i === 0 ? 'true' : 'false'}
+                  tabindex={i === 0 ? 0 : -1}
+                  data-tab={j.id}
+                  data-from={j.from}
+                  data-to={j.to ?? ''}
+                >
+                  <span class="la-label">
+                    <span class="la-ch mono">CH{ch(i)}</span>
+                    <span class="la-name">{j.short}</span>
+                  </span>
+                  <span class="visually-hidden">
+                    · {j.role} · {range(j.from, j.to)}
+                  </span>
+                  <svg class="la-wave" aria-hidden="true">
+                    <rect class="la-fill" x={xFrom(j.from)} y="7" width={xWidth(j.from, j.to)} height="22" data-fill />
+                    <line class="la-lo" x1="0" x2={xFrom(j.from)} y1="29" y2="29" data-lo-a />
+                    <line class="la-edge" x1={xFrom(j.from)} x2={xFrom(j.from)} y1="29" y2="7" data-rise />
+                    <line class="la-hi" x1={xFrom(j.from)} x2={xTo(j.to)} y1="7" y2="7" data-hi />
+                    {!j.to && <line class="la-flow" x1={xFrom(j.from)} x2="100%" y1="7" y2="7" data-hi />}
+                    {j.to && <line class="la-edge" x1={xTo(j.to)} x2={xTo(j.to)} y1="7" y2="29" data-fall />}
+                    {j.to && <line class="la-lo" x1={xTo(j.to)} x2="100%" y1="29" y2="29" data-lo-b />}
+                  </svg>
+                </button>
+              ))
+            }
+          </div>
+
+          <!-- marcador "hoy" y cursor del osciloscopio (solo decorativos) -->
+          <span class="la-now" aria-hidden="true"></span>
+          <span class="la-cursor" aria-hidden="true" data-cursor-line>
+            <span class="la-cursor__tag mono" data-cursor-tag></span>
+          </span>
+        </div>
+        <p class="la-hint mono" data-js-only aria-hidden="true"><span>↑↓</span> {w.hint}</p>
+      </div>
+
+      <div class="la-panels">
         {
-          t.jobs.map((j, i) => (
-            <li class="commit" data-reveal>
-              <div class="graph" aria-hidden="true">
-                <span class:list={['dot', { head: i === 0 }]} />
-              </div>
-              <details class="body" open={i === 0}>
-                <summary>
-                  <span class="line1 mono">
-                    <span class="hash">{j.id}</span>
-                    {i === 0 && (
-                      <span class="ref">
-                        <b>HEAD</b> → main
-                      </span>
-                    )}
-                    <span class="date">{range(j.from, j.to)}</span>
-                    <span class="dur" title={w.duration}>
+          jobs.map((j, i) => (
+            <article
+              class="jp"
+              role="tabpanel"
+              id={`job-${j.id}`}
+              aria-labelledby={`tab-${j.id}`}
+              tabindex="0"
+              data-panel={j.id}
+              data-active={i === 0 ? '' : undefined}
+            >
+              <header class="jp-head">
+                <p class="jp-kicker label">
+                  <b>CH{ch(i)}</b>
+                  {!j.to && (
+                    <span class="jp-live">
+                      <span class="led led--volt is-pulse" /> {w.current}
+                    </span>
+                  )}
+                </p>
+                <h3 class="jp-company">{j.company}</h3>
+                <p class="jp-role">{j.role}</p>
+                <p class="jp-summary">{j.summary}</p>
+                <dl class="jp-meta">
+                  <div>
+                    <dt class="label">{w.rangeLabel}</dt>
+                    <dd class="mono">{range(j.from, j.to)}</dd>
+                  </div>
+                  <div>
+                    <dt class="label">{w.duration}</dt>
+                    <dd class="mono jp-dur">
                       {j.to ? (
                         jobDuration(j.from, j.to, lang)
                       ) : (
@@ -46,214 +157,384 @@ const range = (from: string, to: string | null) => formatRange(from, to, lang, w
                           {jobDuration(j.from, null, lang)}
                         </span>
                       )}
-                    </span>
-                  </span>
-                  <span class="line2">
-                    <span class="company">{j.company}</span>
-                    <span class="role">{j.role}</span>
-                  </span>
-                  <span class="summary">{j.summary}</span>
-                  <span class="toggle mono" data-js-only>
-                    
-                    <span>{w.pointsLabel}</span>
-                  </span>
-                </summary>
-                <div class="more">
-                  <ul class="points">
-                    {j.points.map((p) => (
-                      <li>{p}</li>
-                    ))}
-                  </ul>
-                  <ul class="chip-list">
-                    {j.stack.map((s) => (
-                      <li class="chip">{s}</li>
-                    ))}
-                  </ul>
-                  <p class="mode mono">{j.mode}</p>
-                </div>
-              </details>
-            </li>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt class="label">{w.modeLabel}</dt>
+                    <dd class="mono">{j.mode}</dd>
+                  </div>
+                </dl>
+              </header>
+              <div class="jp-body">
+                <p class="label">{w.pointsLabel}</p>
+                <ul class="jp-points">
+                  {j.points.map((p) => (
+                    <li>{p}</li>
+                  ))}
+                </ul>
+                <p class="label">{w.stackLabel}</p>
+                <ul class="chip-list">
+                  {j.stack.map((s) => (
+                    <li class="chip">{s}</li>
+                  ))}
+                </ul>
+              </div>
+            </article>
           ))
         }
-        <li class="commit root" aria-hidden="true">
-          <div class="graph"><span class="dot" /></div>
-          <p class="body mono root-msg"><span class="hash">1f00d00</span> init · CE INSA 2017 → UES 2023</p>
-        </li>
-      </ol>
+      </div>
     </div>
   </div>
 </section>
 
 <style>
-  .log {
-    max-width: 880px;
-    margin-left: auto;
-    margin-right: 0;
+  .la {
+    display: grid;
+    gap: var(--space-m);
   }
-  .cmd {
-    font-size: 13px;
+
+  /* ---------- traza ---------- */
+  .la-scope {
+    --reg: var(--line-strong);
+  }
+  .la-stat {
+    font-family: var(--font-mono);
+    font-size: var(--step--2);
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: nowrap;
+  }
+  .la-grid {
+    --label-w: 96px;
+    position: relative;
+    padding: var(--space-s) var(--space-s) var(--space-2xs);
+  }
+  .la-ruler {
+    display: grid;
+    grid-template-columns: var(--label-w) minmax(0, 1fr);
+    align-items: end;
+    height: 26px;
+  }
+  .la-ruler__lead {
+    font-size: var(--step--2);
     color: var(--muted);
-    margin-bottom: 18px;
+    padding-bottom: 6px;
   }
-  .cmd span {
+  .la-ruler__svg {
+    width: 100%;
+    height: 26px;
+    overflow: visible;
+  }
+  .la-ruler__svg line {
+    stroke: var(--line-strong);
+    stroke-width: 1;
+  }
+  .la-ruler__svg text {
+    fill: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-anchor: middle;
+  }
+  .la-ruler__svg .la-now-txt {
+    text-anchor: end;
+    fill: var(--volt-ink);
+  }
+
+  .la-rows {
+    display: grid;
+  }
+  .la-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--label-w) minmax(0, 1fr);
+    align-items: center;
+    min-height: 56px;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    border-top: 1px solid var(--line);
+    background: none;
+    color: var(--ink-2);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color var(--dur-1) var(--ease-out);
+  }
+  .la-row:last-child {
+    border-bottom: 1px solid var(--line);
+  }
+  .la-row:hover {
+    background: color-mix(in srgb, var(--surface-2) 70%, transparent);
+  }
+  .la-row:focus-visible {
+    outline-offset: -2px;
+  }
+  .la-label {
+    display: grid;
+    gap: 2px;
+    padding-right: var(--space-2xs);
+    line-height: 1.2;
+  }
+  .la-ch {
+    font-size: 10.5px;
+    color: var(--muted);
+  }
+  .la-name {
+    font-family: var(--font-display);
+    font-size: var(--step--1);
+    font-stretch: 87.5%;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .la-wave {
+    width: 100%;
+    height: 36px;
+    overflow: visible;
+  }
+  .la-wave line {
+    stroke-width: 1.5;
+    stroke-linecap: square;
+    transition: stroke var(--dur-2) var(--ease-out);
+  }
+  .la-lo {
+    stroke: var(--line-strong);
+  }
+  .la-edge,
+  .la-hi {
+    stroke: var(--muted);
+  }
+  .la-fill {
+    fill: transparent;
+    transition: fill var(--dur-2) var(--ease-out);
+  }
+  .la-flow {
+    stroke: var(--volt-ink);
+    stroke-width: 2.5;
+    stroke-dasharray: 3 21;
+    opacity: 0;
+    animation: la-flow 1.4s linear infinite;
+  }
+  .is-live .la-flow {
+    opacity: 0.9;
+  }
+  @keyframes la-flow {
+    to {
+      stroke-dashoffset: -24;
+    }
+  }
+  .la-row:hover .la-edge,
+  .la-row:hover .la-hi {
+    stroke: var(--ink-2);
+  }
+  .la-row[aria-selected='true'] {
+    background: var(--surface-2);
+  }
+  .la-row[aria-selected='true'] .la-ch {
     color: var(--volt-ink);
   }
-  .commits {
-    list-style: none;
-    margin: 0;
-    padding: 0;
+  .la-row[aria-selected='true'] .la-edge,
+  .la-row[aria-selected='true'] .la-hi {
+    stroke: var(--volt-ink);
+    stroke-width: 2;
   }
-  .commit {
-    display: grid;
-    grid-template-columns: 28px minmax(0, 1fr);
-    gap: 12px;
+  .la-row[aria-selected='true'] .la-fill {
+    fill: var(--volt-soft);
   }
-  .graph {
-    position: relative;
-  }
-  .graph::before {
+  /* Indicador del canal elegido: pad a la izquierda. */
+  .la-row::before {
     content: '';
     position: absolute;
-    left: 8px;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background: var(--line-strong);
-  }
-  .commit:first-child .graph::before {
-    top: 14px;
-  }
-  .root .graph::before {
-    bottom: calc(100% - 14px);
-  }
-  .dot {
-    position: absolute;
-    left: 3px;
-    top: 9px;
-    width: 11px;
-    height: 11px;
-    border-radius: 50%;
-    border: 1.5px solid var(--ink-2);
-    background: var(--bg);
-  }
-  .dot.head {
-    border-color: var(--volt-ink);
+    left: calc(-1 * var(--space-s));
+    top: 50%;
+    width: 3px;
+    height: 0;
     background: var(--volt-ink);
-    box-shadow: 0 0 0 4px var(--volt-soft);
+    translate: 0 -50%;
+    transition: height var(--dur-2) var(--ease-out);
   }
-  .body {
-    padding-bottom: 28px;
+  .la-row[aria-selected='true']::before {
+    height: 60%;
   }
-  summary {
+
+  .la-now {
+    position: absolute;
+    top: calc(var(--space-s) + 18px);
+    bottom: var(--space-2xs);
+    right: var(--space-s);
+    width: 0;
+    border-right: 1px dashed color-mix(in srgb, var(--volt-ink) 60%, transparent);
+    pointer-events: none;
+  }
+  .la-cursor {
+    position: absolute;
+    top: calc(var(--space-s) + 18px);
+    bottom: var(--space-2xs);
+    left: 0;
+    width: 1px;
+    background: var(--ion);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--dur-1) var(--ease-out);
+  }
+  .la-cursor.is-on {
+    opacity: 0.8;
+  }
+  .la-cursor__tag {
+    position: absolute;
+    top: -20px;
+    left: 0;
+    translate: -50% 0;
+    padding: 1px 6px;
+    background: var(--ion);
+    color: var(--on-volt);
+    font-size: 10.5px;
+    white-space: nowrap;
+  }
+  .la-hint {
+    padding: 0 var(--space-s) var(--space-s);
+    font-size: var(--step--2);
+    color: var(--muted);
+  }
+  .la-hint span {
+    color: var(--ion-ink);
+  }
+
+  /* ---------- detalle ---------- */
+  .la-panels {
     display: grid;
-    gap: 6px;
-    cursor: pointer;
-    list-style: none;
+    gap: var(--space-m);
   }
-  summary::-webkit-details-marker {
-    display: none;
+  /* Con JS: todos los paneles en la misma celda; solo se ve el activo (sin salto de altura). */
+  :global(.js) .la-panels > .jp {
+    grid-area: 1 / 1;
   }
-  .line1 {
+  :global(.js) .jp:not([data-active]) {
+    visibility: hidden;
+    opacity: 0;
+    translate: 0 8px;
+  }
+  .jp {
+    display: grid;
+    gap: var(--space-m);
+    align-content: start;
+    padding: var(--space-m) 0 0;
+    border-top: 1px solid var(--line);
+    transition:
+      opacity var(--dur-3) var(--ease-out),
+      translate var(--dur-3) var(--ease-out),
+      visibility 0s linear 0s;
+  }
+  .jp:focus-visible {
+    outline-offset: 6px;
+  }
+  .jp-head {
+    display: grid;
+    gap: var(--space-2xs);
+    align-content: start;
+  }
+  .jp-kicker {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 4px 12px;
-    font-size: 13px;
+    gap: var(--space-xs);
   }
-  .hash {
-    color: var(--warn);
-  }
-  .ref {
-    color: var(--ok);
-  }
-  .ref b {
-    font-weight: 500;
+  .jp-live {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
     color: var(--volt-ink);
   }
-  .date {
-    color: var(--muted);
-  }
-  /* Duración calculada desde from/to; la del puesto actual la recalcula el cliente (data-since). */
-  .dur {
-    color: var(--ion-ink);
-  }
-  .dur::before {
-    content: '· ';
-    color: var(--muted);
-  }
-  .line2 {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 2px 12px;
-  }
-  .company {
-    font-size: 20px;
+  .jp-company {
+    font-size: var(--step-3);
     font-weight: 600;
-    letter-spacing: -0.01em;
+    letter-spacing: var(--track-display);
+    line-height: 1.05;
   }
-  .role {
+  .jp-role {
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .jp-summary {
+    max-width: var(--w-text);
     color: var(--ink-2);
   }
-  .summary {
-    color: var(--ink-2);
-    max-width: 70ch;
+  .jp-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+    gap: var(--space-s);
+    margin-top: var(--space-xs);
+    padding-top: var(--space-s);
+    border-top: 1px dashed var(--line);
   }
-  .toggle {
-    font-size: 12px;
-    color: var(--muted);
-    width: fit-content;
+  .jp-meta dd {
+    margin-top: 2px;
+    font-size: var(--step--1);
+    color: var(--ink);
   }
-  .toggle::before {
-    content: '+ ';
-    color: var(--volt-ink);
+  .jp-dur {
+    color: var(--ion-ink) !important;
   }
-  details[open] .toggle::before {
-    content: '− ';
+  .jp-body {
+    display: grid;
+    gap: var(--space-xs);
+    align-content: start;
   }
-  .t-hide,
-  details[open] .t-show {
-    display: none;
-  }
-  details[open] .t-hide {
-    display: inline;
-  }
-  summary:hover .company {
-    color: var(--volt-ink);
-  }
-  .more {
-    margin-top: 14px;
-    padding: 16px 18px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: var(--surface);
-  }
-  .points {
+  .jp-points {
     list-style: none;
     display: grid;
-    gap: 8px;
-    margin-bottom: 16px;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-xs);
   }
-  .points li {
+  .jp-points li {
     position: relative;
-    padding-left: 18px;
+    padding-left: 22px;
     color: var(--ink-2);
+    max-width: var(--w-text);
   }
-  .points li::before {
-    content: '+';
+  .jp-points li::before {
+    content: '';
     position: absolute;
     left: 0;
-    font-family: var(--font-mono);
-    color: var(--ok);
+    top: 0.62em;
+    width: 12px;
+    height: 7px;
+    background:
+      linear-gradient(var(--volt-ink) 0 0) left center / 8px 1px no-repeat,
+      radial-gradient(circle, var(--volt-ink) 0 2px, transparent 2.5px) right center / 6px 6px no-repeat;
   }
-  .mode {
-    margin-top: 12px;
-    font-size: 12px;
-    color: var(--muted);
+
+  @media (min-width: 768px) {
+    .la-grid {
+      --label-w: 150px;
+      padding: var(--space-m) var(--space-m) var(--space-xs);
+    }
+    .la-row::before {
+      left: calc(-1 * var(--space-m));
+    }
+    .la-now {
+      right: var(--space-m);
+      top: calc(var(--space-m) + 18px);
+    }
+    .la-cursor {
+      top: calc(var(--space-m) + 18px);
+    }
+    .la-hint {
+      padding: 0 var(--space-m) var(--space-m);
+    }
+    .la-ch {
+      font-size: 11px;
+    }
   }
-  .root-msg {
-    padding: 6px 0 0;
-    font-size: 13px;
-    color: var(--muted);
+  @media (min-width: 1024px) {
+    .jp {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+      gap: var(--space-xl);
+      padding-top: var(--space-l);
+    }
+  }
+  @media (max-width: 420px) {
+    .la-stat {
+      display: none;
+    }
   }
 </style>
