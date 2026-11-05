@@ -380,6 +380,41 @@ const n = slides.length;
     opacity: 1;
     border-color: var(--volt-ink);
   }
+  /* Teléfonos (con JS): sin miniaturas; flechas y pie de foto comparten una fila. */
+  @media (max-width: 767.98px) {
+    :global(.js) .gallery {
+      grid-template-columns: 44px minmax(0, 1fr) 44px;
+      column-gap: var(--space-2xs);
+      align-items: center;
+    }
+    :global(.js) .browser {
+      grid-column: 1 / -1;
+    }
+    :global(.js) .g-controls {
+      display: contents;
+    }
+    :global(.js) .thumbs {
+      display: none;
+    }
+    :global(.js) .g-foot {
+      grid-row: 2;
+      grid-column: 2;
+      justify-content: center;
+    }
+    :global(.js) .caption {
+      min-height: 0;
+      text-align: center;
+      line-height: 1.35;
+    }
+    :global(.js) [data-prev] {
+      grid-row: 2;
+      grid-column: 1;
+    }
+    :global(.js) [data-next] {
+      grid-row: 2;
+      grid-column: 3;
+    }
+  }
   .thumb[aria-current='true']::after {
     content: '';
     position: absolute;

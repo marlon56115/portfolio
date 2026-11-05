@@ -16,6 +16,11 @@ const { lang } = Astro.props;
 const t = dict[lang];
 // Años completos desde el inicio de carrera; el cliente los recalcula (data-since).
 const years = yearsSince(careerStart);
+// Lead en dos partes: en teléfonos solo se ve la primera frase (la segunda repite "Ahora").
+const [leadA, leadB] = (() => {
+  const i = t.hero.lead.indexOf('. ');
+  return i < 0 ? [t.hero.lead, ''] : [t.hero.lead.slice(0, i + 1), t.hero.lead.slice(i + 2)];
+})();
 ---
 
 <section class="hero" id="about">
@@ -24,7 +29,7 @@ const years = yearsSince(careerStart);
       <p class="hero__eyebrow eyebrow"><span class="xmark" aria-hidden="true"></span>{t.hero.kicker}</p>
       <h1 class="hero__name">{t.name}</h1>
       <p class="hero__headline">{t.hero.headline}</p>
-      <p class="hero__lead">{t.hero.lead}</p>
+      <p class="hero__lead">{leadA}{leadB && <span class="hero__lead-more"> {leadB}</span>}</p>
       <div class="hero__cta">
         <a class="btn" href="#contact" data-magnetic>{t.hero.ctaPrimary} <span class="arrow" aria-hidden="true">→</span></a>
         <a class="btn btn--ghost" href="#work" data-magnetic>{t.hero.ctaSecondary}</a>
@@ -169,12 +174,6 @@ const years = yearsSince(careerStart);
     margin-top: 24px;
     --term-h: 236px;
   }
-  /* Teléfonos: la terminal llega plegada en una barra; aire claro arriba y abajo. */
-  @media (max-width: 767.98px) {
-    .hero__term {
-      margin-block: 32px 8px;
-    }
-  }
   .hero__channels {
     grid-area: channels;
     margin-top: 32px;
@@ -199,6 +198,34 @@ const years = yearsSince(careerStart);
   .num {
     font-family: var(--font-mono);
     font-weight: 500;
+  }
+
+  /* Teléfonos: jerarquía con aire entre bloques; la terminal llega plegada en una barra. */
+  @media (max-width: 767.98px) {
+    .hero {
+      padding-block: 28px 32px;
+    }
+    .hero__headline {
+      margin-top: 28px;
+    }
+    .hero__lead {
+      margin-top: 12px;
+    }
+    .hero__lead-more {
+      display: none;
+    }
+    .hero__cta {
+      margin-top: 28px;
+    }
+    .hero__term {
+      margin-top: 40px;
+    }
+    .hero__channels {
+      margin-top: 40px;
+    }
+    .hero__facts {
+      margin-top: 32px;
+    }
   }
 
   @media (min-width: 768px) {

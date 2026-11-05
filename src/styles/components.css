@@ -81,6 +81,15 @@
   font-size: var(--step-1);
   line-height: 1.5;
 }
+@media (max-width: 767.98px) {
+  .section-head {
+    gap: var(--space-xs);
+    margin-bottom: var(--space-m);
+  }
+  .section-head > div {
+    gap: var(--space-xs);
+  }
+}
 @media (min-width: 1024px) {
   .section-head {
     grid-template-columns: 220px minmax(0, 1fr);
@@ -413,4 +422,42 @@ kbd,
 
 .arrow {
   font-family: var(--font-mono);
+}
+
+/* ---------- pliegue móvil (ui/Fold.astro) ---------- */
+/* Solo < 768 px y con JS: lo secundario queda tras un botón. En escritorio todo se ve. */
+.m-fold__btn {
+  display: none;
+}
+@media (max-width: 767.98px) {
+  .js .m-fold:not(.is-open) {
+    display: none;
+  }
+  .js .m-fold__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-self: start;
+    align-self: start;
+    gap: var(--space-2xs);
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ion-ink);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    cursor: pointer;
+  }
+  .m-fold__i {
+    position: relative;
+    width: 9px;
+    height: 9px;
+    background:
+      linear-gradient(currentColor, currentColor) center / 100% 1px no-repeat,
+      linear-gradient(currentColor, currentColor) center / 1px 100% no-repeat;
+    transition: rotate var(--dur-2) var(--ease-out);
+  }
+  .m-fold__btn[aria-expanded='true'] .m-fold__i {
+    rotate: 45deg;
+  }
 }

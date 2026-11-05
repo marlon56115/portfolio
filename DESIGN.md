@@ -203,6 +203,9 @@ Tokens: `--ease-out`, `--ease-in-out`, `--ease-snap`; `--dur-1` 120 ms (color/ho
 | Progreso | `core/nav.ts` | barra en el borde inferior de la cabecera | `transform: scaleX`, un listener de scroll en rAF |
 | Aparición | `core/reveal.ts` | `data-reveal` (sube 14 px) o `data-reveal="fade"`; `data-reveal-stagger="70"` en un contenedor | una sola vez por elemento |
 | Magnético | `fx/cursor.ts` | `data-magnetic` | ≤ 6 px |
+| Decodificación | `fx/decode.ts` | `.section-head` (índice 420 ms, título 640 ms); cifras `[data-since]` en `.hero__facts`/`.la-stat` y `.f-n` (560 ms) | una vez al entrar en pantalla; también en táctil. Los títulos de sección **deben** seguir en fuente mono (Martian Mono) para que el descifrado no cambie el ancho; glifos `01>=*#_~` (no abren saltos de línea) |
+| Foco de luz | `fx/spotlight.ts` + `fx.css` | todo `.panel` y lo marcado con `[data-spot]` | solo puntero fino. En `.panel` reutiliza `::before` (filete) y `::after` (superficie) añadiendo **solo** `background-image`: no les pongas `background-image` propio o el foco deja de verse. `.spot` (tarjetas `.project` y `.jp`) dibuja su halo en `::after`. Otros `[data-spot]` (tarjetas de contacto) leen `--fx-sx/--fx-sy` en su CSS |
+| Cambio de tema circular | `fx/theme-wipe.ts` + `fx.css` | botón `[data-theme-toggle]` y comando `theme` de la terminal | View Transition; el tema nuevo se abre en círculo desde el origen (560 ms). Otros orígenes usan `switchTheme(tema, persistir, elemento)`. Sin soporte o con movimiento reducido, instantáneo |
 
 ### 5.1 Presupuestos del fondo
 
@@ -221,7 +224,28 @@ sin aparición (todo visible), transiciones a 0.01 ms, scroll sin suavizado. Cua
 nuevo **debe** respetarlo (usa `reducedMotion` de `src/lib/dom.ts`). Hoy lo hacen todos: fondo,
 mira, scramble, aparición, intro de la terminal (queda la transcripción del HTML), sonda del retrato,
 cursor de la traza, galerías (desplazamiento instantáneo), capas de la plataforma (se encienden de
-una vez), flujos de "autoalojado" y la onda al copiar el correo.
+una vez), flujos de "autoalojado", la onda al copiar el correo, la decodificación de títulos y cifras
+(no corre), el foco de luz (no corre) y el cambio de tema (instantáneo, sin barrido).
+
+### 5.3 Densidad móvil (< 768 px)
+
+En teléfonos la página mide ~36 % menos que antes de esta regla (375 px: 14 139 → 9 052 px). Reglas:
+
+- **Ritmo vertical:** `--space-section` baja a 48 px (tokens.css); `.section-head` usa `gap` 12 px y
+  `margin-bottom` 24 px. Títulos de proyecto/puesto un paso menos (`--step-2`).
+- **Lo secundario se pliega** con `ui/Fold.astro` (botón "ver más" de 44 px, `aria-expanded`,
+  `aria-controls`; `core/fold.ts`). Solo < 768 px y con JS: en escritorio y sin JS se ve todo.
+  Hoy: logros de puestos anteriores (el actual queda abierto), puntos de cada proyecto, el flujo
+  "Cómo sale una versión" y el borrador del correo.
+- **Listas largas → filas desplazables con scroll-snap** que sangran hasta el borde (`margin-inline`
+  negativo + `scroll-padding` = gutter): frentes del stack y etapas de los flujos. Las galerías ya
+  son carrusel; en móvil pierden las miniaturas y las flechas comparten fila con el pie de foto.
+- **Listas de herramientas como chips** (sin pads) en vez de filas.
+- **Visualizaciones resumidas:** capas de la plataforma solo con nombre; panel en vivo sin notas y
+  con sparkline de 40 px; hero sin la segunda frase del lead (repite "Ahora"), formación sin notas,
+  tarjetas de perfil en dos columnas y sin nota.
+- Se mantienen: objetivos táctiles de 44 px, el gutter lateral y el aire del hero (28–40 px entre
+  bloques). Un cambio móvil va en `@media (max-width: 767.98px)` **después** de las reglas base.
 
 Presupuesto general: 60 fps; nada de animar `width/height/top/left` en bucles (usa `transform`,
 `translate`, `opacity`, `clip-path`); nada de lecturas de layout dentro de bucles que también escriben.

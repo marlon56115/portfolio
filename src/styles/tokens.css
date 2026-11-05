@@ -134,7 +134,13 @@
   --z-menu: 45;
   --z-cursor: 90;
   --z-skip: 100;
+}
 
+/* Densidad móvil (DESIGN.md §5.3): menos aire vertical entre secciones en teléfonos. */
+@media (max-width: 767.98px) {
+  :root {
+    --space-section: 3rem; /* 48 */
+  }
 }
 
 /* ---------- color · claro ---------- */

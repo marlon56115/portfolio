@@ -1,11 +1,14 @@
-// Foco de luz en los paneles (.panel): cerca del puntero el filete se enciende en --ion y el fondo
-// recibe un halo muy tenue. El dibujo es CSS (fx.css) sobre los ::before/::after que ya pintan el
-// borde y la superficie del panel; aquí solo se escriben --fx-sx/--fx-sy (una lectura de layout por
-// cuadro, en rAF) y la clase .fx-spot. Solo con ratón/trackpad y sin movimiento reducido.
+// Foco de luz en los paneles (.panel) y en lo marcado con [data-spot]: cerca del puntero el filete se
+// enciende en --ion y el fondo recibe un halo muy tenue. Aquí solo se escriben --fx-sx/--fx-sy (una
+// lectura de layout por cuadro, en rAF) y la clase .fx-spot; el dibujo es CSS:
+// - .panel: fx.css sobre los ::before/::after que ya pintan el borde y la superficie del panel.
+// - .spot (tarjetas de proyecto y del puesto): fx.css añade un halo propio en ::after.
+// - otros [data-spot] (tarjetas de contacto) leen --fx-sx/--fx-sy en su propio CSS.
+// Solo con ratón/trackpad y sin movimiento reducido.
 
 import { $$, finePointer, reducedMotion } from '../../lib/dom';
 
-const SEL = '.panel';
+const SEL = '.panel, [data-spot]';
 
 export function initSpotlight(): void {
   if (!finePointer.matches || reducedMotion.matches) return;

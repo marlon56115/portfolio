@@ -61,6 +61,7 @@ const es = {
 
     // borrador
     composeTitle: 'borrador.eml',
+    composeOpen: 'Escribir un mensaje aquí',
     composeLead: 'Se abre tu app de correo con el mensaje listo.',
     name: 'Tu nombre',
     namePh: 'Ana Pérez',
@@ -126,6 +127,7 @@ const en: Contact = {
     refsValue: 'Available on request',
 
     composeTitle: 'draft.eml',
+    composeOpen: 'Write a message here',
     composeLead: 'Opens your mail app with the message ready.',
     name: 'Your name',
     namePh: 'Jane Doe',

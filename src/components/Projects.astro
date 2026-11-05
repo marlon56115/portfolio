@@ -3,6 +3,7 @@
 // infraestructura) y dos apps con galería de capturas (datos de demostración) y lightbox.
 import type { Lang } from '../i18n';
 import { dict } from '../i18n';
+import Fold from './ui/Fold.astro';
 import { sectionIndex } from '../lib/sections';
 import SectionHead from './ui/SectionHead.astro';
 import LayerStack from './projects/LayerStack.astro';
@@ -22,7 +23,8 @@ interface Props {
   lang: Lang;
 }
 const { lang } = Astro.props;
-const p = dict[lang].projects;
+const t = dict[lang];
+const p = t.projects;
 
 const galleries = {
   money: { host: 'gastos', imgs: [{ img: money1, dark: moneyDark }, { img: money2 }, { img: money3 }, { img: moneyMobile, phone: true }] },
@@ -41,7 +43,7 @@ const ui = { gallery: p.gallery, prev: p.prev, next: p.next, open: p.open, of: p
     <div class="projects">
       {
         p.items.map((item, idx) => (
-          <article class:list={['project', `project--${item.slug}`]} id={`project-${item.slug}`} data-reveal>
+          <article class:list={['project', 'spot', `project--${item.slug}`]} id={`project-${item.slug}`} data-reveal data-spot>
             <div class="p-copy">
               <p class="p-kicker label">
                 <b>{String(idx + 1).padStart(2, '0')}</b>
@@ -56,11 +58,13 @@ const ui = { gallery: p.gallery, prev: p.prev, next: p.next, open: p.open, of: p
                 )}
               </h3>
               <p class="p-summary">{item.summary}</p>
-              <ul class="p-points">
-                {item.points.map((pt) => (
-                  <li>{pt}</li>
-                ))}
-              </ul>
+              <Fold id={`project-${item.slug}-more`} more={`${t.ui.more} (${item.points.length})`} less={t.ui.less}>
+                <ul class="p-points">
+                  {item.points.map((pt) => (
+                    <li>{pt}</li>
+                  ))}
+                </ul>
+              </Fold>
               <ul class="chip-list">
                 {item.stack.map((s) => (
                   <li class="chip">{s}</li>
@@ -187,6 +191,25 @@ const ui = { gallery: p.gallery, prev: p.prev, next: p.next, open: p.open, of: p
   }
   .p-visual {
     min-width: 0;
+  }
+
+  /* Teléfonos: menos aire entre proyectos y entre bloques del texto. */
+  @media (max-width: 767.98px) {
+    .projects {
+      gap: var(--space-xl);
+    }
+    .project {
+      gap: var(--space-m);
+    }
+    .p-copy {
+      gap: var(--space-xs);
+    }
+    .p-name {
+      font-size: var(--step-2);
+    }
+    .p-summary {
+      font-size: var(--step-0);
+    }
   }
 
   @media (min-width: 1024px) {

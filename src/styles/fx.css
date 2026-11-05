@@ -183,6 +183,27 @@
   .panel.fx-spot::after {
     --fx-a: 1;
   }
+
+  /* .spot: bloques sin pseudos de panel (tarjeta de proyecto, detalle del puesto). Halo en ::after
+     y un tramo encendido del filete superior; no toca el layout. */
+  .spot {
+    position: relative;
+    isolation: isolate;
+  }
+  .spot::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(160px circle at var(--fx-sx, 50%) 0, color-mix(in srgb, var(--ion) calc(var(--fx-a) * 70%), transparent), transparent 75%) top / 100% 1px no-repeat,
+      radial-gradient(420px circle at var(--fx-sx, 50%) var(--fx-sy, 50%), color-mix(in srgb, var(--ion-soft) calc(var(--fx-a) * 70%), transparent), transparent 70%);
+    transition: --fx-a var(--dur-3) var(--ease-out);
+  }
+  .spot.fx-spot::after {
+    --fx-a: 1;
+  }
 }
 
 /* ---------- cambio de tema con barrido circular (fx/theme-wipe.ts) ---------- */

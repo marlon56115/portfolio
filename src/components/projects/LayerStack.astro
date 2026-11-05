@@ -193,4 +193,29 @@ const { title, run, done, layers, facts } = Astro.props;
   .stack-run {
     justify-self: start;
   }
+
+  /* Teléfonos: versión resumida (solo nombres de capa, filas más bajas). */
+  @media (max-width: 767.98px) {
+    .stack-body {
+      gap: var(--space-s);
+      padding: var(--space-s);
+    }
+    .layer {
+      padding: 5px 0;
+    }
+    .l-desc {
+      display: none;
+    }
+    .layers::before,
+    .layers::after {
+      top: 12px;
+      bottom: 12px;
+    }
+    .fact-n {
+      font-size: var(--step-2);
+    }
+    .facts {
+      padding-top: var(--space-xs);
+    }
+  }
 </style>
