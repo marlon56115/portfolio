@@ -1,9 +1,8 @@
 # DESIGN.md — sistema "Signal"
 
-Fuente de verdad del diseño del portafolio. La fase 1 (fundación) dejó tokens, kit de componentes,
-efectos, estructura de código y contenido; la fase 2 reparte las secciones entre cuatro sesiones
-(ver [Ownership map](#ownership-map-fase-2)). Si algo aquí choca con el código, gana este documento
-y se corrige el código.
+Fuente de verdad del diseño del portafolio: tokens, tipografía, kit de componentes, movimiento,
+accesibilidad, privacidad, CSP y estructura del código. Si algo aquí choca con el código, gana este
+documento y se corrige el código.
 
 ---
 
@@ -62,9 +61,8 @@ La elección manual se guarda en `localStorage.theme`.
 (1.05:1). Se usa como texto sobre tinta (botón primario claro: tinta + texto lima) o como relleno con
 texto oscuro encima. Para texto de acento usa siempre `--volt-ink`.
 
-**Alias heredados** (`--accent`, `--accent-ink`, `--accent-soft`, `--grid`, `--shadow`): apuntan a los
-tokens nuevos para que las secciones viejas no se rompan. No los uses en código nuevo; la fase 2 los
-reemplaza en sus archivos.
+No hay alias heredados: `--accent*`, `--grid` y `--shadow` se retiraron. Usa `--volt*`, `--ion*` y
+`--shadow-1/2`.
 
 ### 2.2 Contraste (WCAG 2.1, calculado con la fórmula de luminancia relativa)
 
@@ -135,7 +133,7 @@ Convenciones:
   `2xl` 64 · `3xl` 96. Entre secciones: `--space-section` (64 → 128 px).
 - Forma: `--radius` 2 px (casi recto), `--cut` 10 px / `--cut-s` 6 px (chaflán). Los polígonos
   `--chamfer*` se resuelven en `:root`; si una variante necesita otro tamaño, escribe el polígono con
-  `var(--cut)` en su regla y cambia `--cut` localmente (como hace `.btn--sm`).
+  `var(--cut)` en su regla y cambia `--cut` localmente.
 - Capas: `--z-bg` −1 (canvas), `--z-header` 40, `--z-menu` 45, `--z-cursor` 90, `--z-skip` 100.
 - Celda de la rejilla: `--cell` 24 px (la usan el canvas y `.dot-grid`).
 
@@ -149,9 +147,12 @@ Convenciones:
 - Contenedor: `.wrap` → `max-width: var(--w)` (1200 px) + `--gutter` (16 → 40 px) a cada lado.
 - Sección: `.section` (padding vertical `--space-section`). Entre secciones consecutivas se dibuja
   un filete con una marca más oscura al inicio.
-- Rejilla opcional: `.grid-cols` → 4 / 8 / 12 columnas.
+- Cada sección define su propio grid (no hay rejilla global de columnas).
 - **Nunca scroll horizontal.** En grids usa `minmax(0, 1fr)`, no `1fr`, si hay contenido con
-  `white-space: pre/nowrap`. Verificado a 360/390/768/1024/1440 en es y en.
+  `white-space: pre/nowrap`. Verificado a 360, 375, 390, 414, 667×375, 844×390, 768, 1024, 1280, 1440
+  y 1920 en es y en.
+- **Espacios en Astro:** un salto de línea entre `</span>` y `{expresión}` se pierde al compilar
+  ("© 2026Marlon"). Escribe `{' '}` al final de la línea cuando el espacio importa.
 - Cabecera fija de `--header-h` (60 px); `scroll-padding-top` ya la compensa.
 
 ---
@@ -164,22 +165,19 @@ CSS en `src/styles/components.css`. Clases globales; cada sección las usa y añ
 | Componente | Marcado | Notas |
 |---|---|---|
 | Botón primario | `<a class="btn" href="…" data-magnetic>Texto <span class="arrow" aria-hidden="true">→</span></a>` | lima/tinta en oscuro; tinta/lima en claro. Mín. 44 px de alto |
-| Botón fantasma | `class="btn btn--ghost"` (alias heredado `btn-ghost`) | borde `--line-strong`, hover ion |
-| Botón pequeño | `class="btn btn--sm"` | 34 px, chaflán 7 px |
-| Botón de ícono | `<button class="icon-btn" aria-label="…">svg</button>` | 40 × 40, chaflán pequeño |
+| Botón fantasma | `class="btn btn--ghost"` | borde `--line-strong`, hover ion |
+| Botón de ícono | `<button class="icon-btn" aria-label="…">svg</button>` | 40 × 40 (44 × 44 con puntero táctil), chaflán pequeño |
 | Magnético | atributo `data-magnetic` en cualquier botón | se desplaza ≤ 6 px hacia el puntero (`--mx/--my`, propiedad `translate`) |
 | Chip | `<ul class="chip-list"><li class="chip">Java</li></ul>` | mono, pad cuadrado a la izquierda; variantes `chip--volt`, `chip--ion` |
 | Tag | `<span class="tag">nuevo</span>` | Martian Mono en mayúsculas |
 | Panel / ventana | `<div class="panel"><div class="panel__bar"><span class="led"></span><span class="panel__title">…</span></div><div class="panel__body">…</div></div>` | esquina superior derecha achaflanada; `panel--raised` |
 | Marcas de registro | `class="reg"` (o `reg reg--volt`) en cualquier caja | 4 esquinas en L sin marcado extra (usa `background-image`) |
 | Cruz suelta | `<span class="xmark" aria-hidden="true"></span>` | |
-| Rejilla de puntos | `class="dot-grid"` | estática; la de página es el canvas |
-| Divisor | `<hr class="trace">` | línea con pads en los extremos |
 | Cabecera de sección | `<SectionHead index={sectionIndex('work')} label=… title=… lead=… />` (`src/components/ui/SectionHead.astro`) | índice "01 / etiqueta" con pista, h2, entradilla |
 | Etiqueta | `<p class="label">texto <b>dato</b></p>` · `.eyebrow` | |
 | LED | `<span class="led"></span>` + `led--volt` / `led--ion` / `led--flare` / `is-off` / `is-pulse` | cuadrado con halo |
 | Tecla | `<kbd>Esc</kbd>` | |
-| Enlace | `class="link"` (+ `link--ion`, `link--volt`); externo: `<span class="ext" aria-hidden="true">↗</span>` | subrayado que se traza al hover |
+| Enlace | `class="link"` | subrayado que se traza al hover |
 | Anillo de foco | automático (`:focus-visible`) | 2 px `--focus`, offset 3 px. Los chaflanes van en `::before/::after` para no recortarlo |
 
 Reglas: no metas `clip-path` en el propio elemento enfocable (recorta el outline); usa pseudos.
@@ -214,7 +212,10 @@ Tokens: `--ease-out`, `--ease-in-out`, `--ease-snap`; `--dur-1` 120 ms (color/ho
 
 Fondo estático (un cuadro, sin ondas, barrido ni parallax), sin mira ni magnético, sin scramble,
 sin aparición (todo visible), transiciones a 0.01 ms, scroll sin suavizado. Cualquier efecto nuevo de
-la fase 2 **debe** respetarlo (usa `reducedMotion` de `src/lib/dom.ts`).
+nuevo **debe** respetarlo (usa `reducedMotion` de `src/lib/dom.ts`). Hoy lo hacen todos: fondo,
+mira, scramble, aparición, intro de la terminal (queda la transcripción del HTML), sonda del retrato,
+cursor de la traza, galerías (desplazamiento instantáneo), capas de la plataforma (se encienden de
+una vez), flujos de "autoalojado" y la onda al copiar el correo.
 
 Presupuesto general: 60 fps; nada de animar `width/height/top/left` en bucles (usa `transform`,
 `translate`, `opacity`, `clip-path`); nada de lecturas de layout dentro de bucles que también escriben.
@@ -230,7 +231,12 @@ Sin librerías de animación.
   primer enlace y queda atrapado en la cabecera; Esc cierra y devuelve el foco al botón; elegir un
   enlace cierra; scroll del body bloqueado (`html.is-locked`). Sin JS: fila desplazable.
 - Enlace activo de la nav: `aria-current="location"`.
-- Objetivos táctiles ≥ 40 × 40 px (botones de texto ≥ 44 px de alto).
+- Objetivos táctiles ≥ 44 × 44 px con puntero táctil (cabecera, menú, chips de la terminal, galerías,
+  formulario, pie). Con ratón, los botones de ícono quedan en 40 × 40. Entradas de texto a 16 px
+  (iOS no hace zoom).
+- Foco: anillo `--focus` en todo; la entrada de la terminal no dibuja el suyo, lo lleva la ventana
+  (`.term:has(.term__in:focus-visible)`). Lightbox: foco al botón Cerrar, Tab atrapado, Esc cierra y
+  el foco vuelve a la captura que se estaba viendo.
 - Todo lo que depende de JS lleva `data-js-only` (se oculta sin JS). El contenido nunca depende de JS.
 - Imágenes con `alt` real; decorativos con `aria-hidden="true"`.
 - Idioma: `lang` en `<html>` y en fragmentos de otro idioma.
@@ -278,9 +284,12 @@ src/styles/{fonts,tokens,base,components,fx}.css  (global.css solo importa)
 src/scripts/main.ts      solo importa e inicia (cada init aislado con safe())
 src/scripts/core/{theme,nav,menu,reveal}.ts
 src/scripts/fx/{background,cursor,scramble}.ts
-src/scripts/sections/{hero,system,work,projects,contact}.ts
-src/scripts/terminal.ts, status.ts, notfound.ts
-src/components/ui/SectionHead.astro, Header.astro, Footer.astro, Home.astro, layouts/Base.astro
+src/scripts/sections/{hero,system,work,projects,contact}.ts   un init*() por sección (main.ts los llama)
+src/scripts/hero/{channels,portrait}.ts · src/scripts/work/{trace,skills,gallery,lightbox,stack}.ts
+src/scripts/terminal.ts (shell simulada, solo en el navegador), status.ts (/api/status), notfound.ts
+src/components/{Hero,Work,Projects,Skills,System,Contact}.astro + hero/, projects/, ui/SectionHead.astro
+src/components/{Header,Footer,Home,Terminal}.astro, layouts/Base.astro
+scripts/og.mjs (imagen OG) · scripts/hero-photo/ (recorte y semitonos del retrato; no es dependencia del sitio)
 ```
 
 **Experiencia dinámica:** nunca escribas "4+ años". Al construir: `yearsSince(careerStart)`; en el HTML:
@@ -291,85 +300,36 @@ se reconstruya el sitio. También actualiza `[data-year]`.
 
 **Orden de la página:** hero → experiencia (01) → proyectos (02) → stack (03) → autoalojado (04) →
 contacto (05). Para un recruiter la experiencia va primero; la sección técnica del sitio pasa al final.
+El hero ya cubre los cinco frentes y trae la terminal, así que "autoalojado" funciona como prueba
+técnica antes del cierre, no como introducción.
+
+**`/api/status`** publica solo `ok`, `generatedAt`, `uptimeSeconds` (múltiplo de 60), `requestsServed`
+y, si hay métricas frescas, `cpu`, `memory` (0–1) y `cpuHistory`. El cliente (`status.ts`) descarta
+cualquier otro campo. Nada de SO, versiones, hardware, pods ni namespaces.
 
 Convenciones: comentarios y docs en español; identificadores en inglés.
 
 ---
 
-## Ownership map (fase 2)
+## Decisiones de la revisión final (QA)
 
-Cada sesión edita **solo** sus archivos. Lo compartido está congelado.
+- Orden de secciones: se mantiene experiencia antes de "autoalojado" (ver §9).
+- Títulos de proyecto (`h3`) en `--step-3`, un paso por debajo del `h2` de sección, igual que el puesto
+  en Experiencia. Entradilla de sección separada del título también en móvil.
+- Sin "Cloudflare" en la caja de herramientas ni en el stack: no explicar cómo se expone el sitio.
+- Galerías: todas las capturas en `loading="lazy"` (están muy por debajo del pliegue); solo el retrato
+  del hero va `eager` + `fetchpriority="high"`.
+- Copiar el correo: solo `navigator.clipboard`. Si no está disponible, el correo queda seleccionado
+  y se pide Ctrl/⌘ C (sin `document.execCommand`, obsoleto).
+- Se retiraron alias y clases del kit que nadie usaba (`--accent*`, `--grid`, `--shadow`, `.btn-ghost`,
+  `.btn--sm`, `.dot-grid`, `.trace`, `.ext`, `.link--ion/volt`, `.grid-cols`, `.scramble__glyph`).
 
-| Sesión | Archivos |
-|---|---|
-| **pf-hero** | `src/components/Hero.astro`, `src/components/Terminal.astro`, `src/scripts/terminal.ts`, `src/scripts/sections/hero.ts`, `src/i18n/hero.ts`, `src/i18n/terminal.ts`, `src/assets/marlon*` |
-| **pf-system** | `src/components/System.astro`, `src/scripts/sections/system.ts`, `src/scripts/status.ts`, `src/i18n/system.ts`, `server/**`, `chart/**` |
-| **pf-work** | `src/components/{Work,Projects,Skills}.astro`, `src/scripts/sections/{work,projects}.ts`, `src/i18n/{work,projects,skills}.ts`, `src/assets/projects/**` |
-| **pf-contact** | `src/components/Contact.astro`, `src/scripts/sections/contact.ts`, `src/i18n/contact.ts` |
+## Cómo verificar
 
-**Compartidos y congelados** (dueño: fase 1): `src/styles/*`, `src/layouts/Base.astro`,
-`src/components/{Header,Footer,Home}.astro`, `src/components/ui/*`, `src/scripts/main.ts`,
-`src/scripts/core/*`, `src/scripts/fx/*`, `src/scripts/notfound.ts`, `src/i18n/{common,index}.ts`,
-`src/lib/*`, `src/pages/*`, `public/*`, `scripts/og.mjs`, `astro.config.mjs`, `package.json`,
-`DESIGN.md`, `README.md`.
-
-**Cambios aditivos permitidos en compartidos** (para no bloquear a nadie; anótalos en tu informe final
-para que QA los revise juntos):
-1. Añadir un token nuevo al final de `tokens.css` (en los tres bloques: oscuro, claro por media, claro
-   por atributo). Nunca renombrar ni cambiar valores existentes.
-2. Añadir una variante nueva al kit en `components.css` (p. ej. `.chip--warn`), sin tocar las
-   existentes.
-3. Añadir claves nuevas a `common.ts` → `ui` (texto de controles compartidos).
-4. Nada más. Si necesitas cambiar `main.ts`, no hace falta: tu módulo de `sections/` ya se importa y se
-   inicia; crea submódulos dentro de tu propia carpeta/archivo y llámalos desde tu `init*()`.
-
-Dependencias nuevas: solo si son imprescindibles, con versión exacta publicada hace ≥ 2 semanas, y
-dilo en el informe (QA las consolida en `package.json`; dos sesiones editando el lockfile chocarían,
-así que **no** ejecutes `npm install` sin acordarlo).
-
----
-
-## Pendiente para la fase 2
-
-Fase 1 solo tocó estos archivos para moverlos o cablearlos; lo siguiente queda para su dueño.
-
-### pf-hero
-- `src/scripts/terminal.ts`: `neofetch` muestra `visitor@homelab`, `Host: Ryzen 5 3600 · 32 GB`,
-  `OS:` (Ubuntu / `st.os`), `Kernel`, `Orchestrator: k3s <versión>` → quitar o volver genérico.
-- `src/scripts/terminal.ts`: comando `uname` (`Linux homelab k3s …`) y `kubectl get pods` (muestra
-  namespace `portfolio`); `status` imprime "in N namespaces" y `memoryTotalBytes` (RAM total).
-- Mover la terminal al hero (ya no hay botón en la cabecera; hoy se abre con <kbd>`</kbd> o
-  <kbd>Ctrl/⌘ K</kbd>). `hero.terminalCta` ya existe en `i18n/hero.ts`.
-- Usar `hero.headline`, `hero.capabilities` (5 frentes: desarrollo, despliegue, infraestructura,
-  datos, IA) y `hero.kicker`; integrar mejor la foto (`hero.photoAlt`).
-- La línea de estado del hero (`sections/hero.ts`) ya dice "autoalojado · activo".
-
-### pf-system
-- `src/components/System.astro`: zona `'homelab · k3s'`, metas `ns/cloudflared`, `ns/monitoring`,
-  `outbound only`, `go · distroless`, `pull · 1m`, la etiqueta `cloudflare`, el host `homelab` en la
-  barra del panel, y las fichas de temperatura y "namespaces". Menos detalle de arquitectura en general.
-- `server/collector.go`: `/api/status` sigue publicando `os`, `k8s` (versiones), `namespaces`,
-  `memoryTotalBytes` y `cpuTempC`. `sections/system.ts` ya no muestra SO/versión, pero el endpoint es
-  público. Comentarios con `tailscale`, `flannel`, `cloudflared (NetworkPolicy)` en `collector.go` y
-  `handler.go` (repo público).
-- `chart/values.yaml`: `prometheusUrl` con el nombre interno del servicio (`kps-prometheus.monitoring…`)
-  en un repo público → mover a valores del despliegue.
-- Migrar `--accent*` a `--volt*` / `--ion*` en `System.astro`.
-
-### pf-work
-- `src/components/Projects.astro`: árbol de `home-server` (`SO, discos, k3s, NAS`, `túnel, DNS,
-  Access`, `cnpg · garage · monitoring`, `sops + age`, título `~/home-server`) y la URL
-  `money.mihomeserver.com` de la galería.
-- Migrar `--accent*` en `Work.astro`, `Projects.astro`, `Skills.astro`.
-- `Work.astro` ya calcula rangos y duraciones con `lib/time.ts` (`.dur`); rediseñar la línea de tiempo
-  libremente.
-
-### pf-contact
-- `Contact.astro` ya no tiene el pie (está en `Footer.astro`). Nuevas claves: `contact.copy`,
-  `contact.location`. Rediseñar la sección completa.
-
-### QA (sesión final)
-- Revisar el conjunto de cambios aditivos en compartidos, `npm audit`, build, grep de CSP y el recorrido
-  completo en Docker.
-- Volver a pasar el grep de privacidad:
-  `grep -rniE 'homelab|ryzen|mi casa|my house|k3s|namespace|cloudflared|tunnel|túnel|NetworkPolicy|sops|garage|nvme|kernel' src server chart`.
+- `npm run build` (0 errores, 0 avisos), `npm audit --omit=dev` limpio.
+- Grep de CSP sobre `dist/**/*.html`: sin `<script>` inline (salvo JSON), sin `<style`, sin `style="`.
+- Grep de privacidad:
+  `grep -rniE 'homelab|ryzen|mi casa|my house|k3s|namespace|cloudflared|tunnel|túnel|NetworkPolicy|sops|garage|nvme|kernel|kps-|tailscale' src server chart public README.md`
+  (solo deben salir comentarios que explican la regla y los tests del servidor que comprueban que no se filtra).
+- Go: `gofmt -l`, `go vet`, `go test`, `govulncheck` (ver README).
+- Docker con la CSP real: `/es/` y `/en/` sin errores en consola.
