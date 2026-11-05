@@ -1,8 +1,9 @@
-// Terminal del hero: una shell SIMULADA que corre solo en el navegador (no ejecuta nada en el servidor).
+// Terminal del hero: una shell de mentira que corre solo en el navegador.
 // Toda la salida se construye con nodos y textContent: nada de lo que escribe el visitante se interpreta
 // como HTML (Trusted Types). Los comandos se buscan con Object.hasOwn (sin sorpresas con "__proto__").
 // Al entrar en pantalla reproduce una intro tecleada (whoami → skills --top) y deja el prompt listo.
 // Con movimiento reducido, la intro ya viene impresa desde el HTML y no se anima.
+// En móvil (< 768 px) arranca plegada: la intro no corre hasta que el visitante la despliega.
 import { fetchStatus, fmtUptime, pct } from './status';
 import { terminal } from '../i18n/terminal';
 import { reducedMotion } from '../lib/dom';
@@ -54,6 +55,7 @@ const S = { es: terminal.es.terminal, en: terminal.en.terminal };
 const SECTIONS = ['about', 'work', 'projects', 'skills', 'system', 'contact'];
 const FILES = ['README.md', 'experience.log', 'projects.md', 'skills.yaml', 'contact.txt'];
 const MAX_ROWS = 400;
+const MOBILE = '(max-width: 767.98px)';
 
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
@@ -64,6 +66,8 @@ export function initTerminal(ctx: Ctx): void {
   const form = root?.querySelector<HTMLFormElement>('[data-terminal-form]');
   const input = root?.querySelector<HTMLInputElement>('[data-terminal-in]');
   const typed = root?.querySelector<HTMLElement>('[data-terminal-typed]');
+  const toggle = root?.querySelector<HTMLButtonElement>('[data-terminal-toggle]');
+  const body = root?.querySelector<HTMLElement>('[data-terminal-body]');
   const raw = document.getElementById('term-data')?.textContent;
   if (!root || !out || !form || !input || !typed || !raw) return;
 
@@ -79,6 +83,11 @@ export function initTerminal(ctx: Ctx): void {
   let skip = false; // el visitante tomó el control: lo que quede de la intro sale sin animación
   let queue: Promise<void> = Promise.resolve();
   let introDone = false;
+  let inView = false;
+  let open = false;
+  const mobile = window.matchMedia(MOBILE);
+  /** Plegada: solo en móvil y mientras el visitante no la abra. */
+  const folded = () => mobile.matches && !open;
 
   // ---------- salida ----------
   const row = (line: Line, ch?: string) => {
@@ -124,7 +133,7 @@ export function initTerminal(ctx: Ctx): void {
   // ---------- comandos ----------
   const cmds: Record<string, (args: string[]) => void | Promise<void>> = {
     help: () => {
-      print([{ t: s.simLong, c: 'c-blue' }], [dim(s.tab)], []);
+      print([{ t: s.help, c: 'c-blue' }], [dim(s.tab)], []);
       s.commands.forEach(([c, d]) => print([acc(pad(c ?? '', 20)), d ? dim(d) : '']));
     },
     whoami: () => print([ok(data.name), dim(' — '), data.role], [dim(data.location)]),
@@ -182,7 +191,7 @@ export function initTerminal(ctx: Ctx): void {
         lines.push([pad(s.load, 12), { t: hist.map((v) => bars[Math.round(clamp01(v) * 7)]).join(''), c: 'c-acc' }]);
       }
       if (!lines.length) return print([err(s.down)]);
-      print(...lines, [dim(s.statusNote)]);
+      print(...lines);
     },
     neofetch: () => {
       const n = s.nf;
@@ -247,6 +256,7 @@ export function initTerminal(ctx: Ctx): void {
     exit: () => {
       print([dim(s.exit)]);
       input.blur();
+      if (mobile.matches) setOpen(false);
     },
     sudo: (a) => (a.join(' ').includes('hire') ? print([s.hire, ' ', mail()]) : print([err(s.sudo)])),
     hire: () => print([s.hire, ' ', mail()]),
@@ -254,7 +264,7 @@ export function initTerminal(ctx: Ctx): void {
     ssh: () => print([{ t: s.ssh, c: 'c-warn' }]),
     vim: () => print([dim(s.vim)]),
     ':q': () => print([ok(s.quit)]),
-    uname: () => print(['portfolio-sh · simulated · browser']),
+    uname: () => print(['portfolio-sh']),
   };
   const alias: Record<string, string> = {
     work: 'experience',
@@ -331,18 +341,35 @@ export function initTerminal(ctx: Ctx): void {
     skip = true;
   }
 
-  const focusTerm = () => {
-    hurry();
+  const reveal = () => {
     const r = root.getBoundingClientRect();
     if (r.top < 0 || r.bottom > window.innerHeight) {
       root.scrollIntoView({ block: 'nearest', behavior: reducedMotion.matches ? 'auto' : 'smooth' });
     }
+  };
+  const focusTerm = () => {
+    hurry();
+    if (folded()) {
+      setOpen(true);
+      // se mide al terminar de desplegarse (--dur-3)
+      window.setTimeout(reveal, reducedMotion.matches ? 0 : 440);
+    } else reveal();
     input.focus({ preventScroll: true });
   };
 
+  // ---------- plegado (móvil) ----------
+  function setOpen(v: boolean) {
+    open = v;
+    root?.classList.toggle('is-open', v);
+    toggle?.setAttribute('aria-expanded', String(v));
+    if (v) startIntro();
+    else if (body?.contains(document.activeElement)) toggle?.focus();
+  }
+  toggle?.addEventListener('click', () => setOpen(!open));
+
   // ---------- intro ----------
-  const startIntro = () => {
-    if (introDone) return;
+  function startIntro() {
+    if (introDone || !out) return;
     introDone = true;
     out.classList.remove('is-pending');
     if (reducedMotion.matches) return; // la transcripción del HTML ya es la intro
@@ -354,19 +381,26 @@ export function initTerminal(ctx: Ctx): void {
     void exec('whoami', true, true);
     queue = queue.then(() => sleep(650, true));
     void exec('skills --top', true, true).then(() => out.setAttribute('aria-live', 'polite'));
+  }
+  // Arranca al verse (escritorio) o al desplegarse (móvil).
+  const maybeStart = () => {
+    if (inView && !folded()) startIntro();
   };
+  mobile.addEventListener('change', maybeStart);
   if ('IntersectionObserver' in window) {
     const io = new IntersectionObserver(
       (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          io.disconnect();
-          startIntro();
-        }
+        inView = entries.some((e) => e.isIntersecting);
+        maybeStart();
+        if (introDone) io.disconnect();
       },
       { threshold: 0.35 },
     );
     io.observe(root);
-  } else startIntro();
+  } else {
+    inView = true;
+    maybeStart();
+  }
   // Si el visitante usa la terminal antes de verla entera, la intro sale de golpe.
   const startNow = () => {
     hurry();
@@ -392,7 +426,7 @@ export function initTerminal(ctx: Ctx): void {
     if (window.getSelection()?.toString()) return;
     focusTerm();
   });
-  root.querySelectorAll<HTMLButtonElement>('[data-cmd]').forEach((b) =>
+  root.querySelectorAll<HTMLButtonElement>('button[data-cmd]').forEach((b) =>
     b.addEventListener('click', () => {
       startNow();
       void exec(b.dataset.cmd ?? 'help');
@@ -402,7 +436,7 @@ export function initTerminal(ctx: Ctx): void {
   // Otros módulos (canales del hero) piden comandos con un evento.
   document.addEventListener('term:run', (e) => {
     const cmd = (e as CustomEvent<string>).detail;
-    if (typeof cmd !== 'string') return;
+    if (typeof cmd !== 'string' || folded()) return; // plegada: los canales no la abren de golpe
     startNow();
     void exec(cmd.slice(0, 120));
   });
@@ -413,8 +447,8 @@ export function initTerminal(ctx: Ctx): void {
     if (typing) return;
     if (e.key === '/' || e.key === '`' || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k')) {
       e.preventDefault();
-      startNow();
       focusTerm();
+      startNow();
     }
   });
 

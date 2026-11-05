@@ -41,10 +41,26 @@
   --fx-hot: #c8ff3d;
   --fx-cool: #38e1ff;
 
-  /* terminal: siempre oscura */
+  /* terminal: oscura en tema oscuro, superficie clara en tema claro */
   --term-bg: #05080c;
   --term-ink: #d6e0e8;
   --term-dim: #6b7b8b;
+  --term-cmd: #f1f5f8;
+  --term-acc: #c8ff3d;
+  --term-ok: #5be38a;
+  --term-warn: #ffc93d;
+  --term-err: #ff5c7a;
+  --term-blue: #38e1ff;
+  --term-line: rgb(214 224 232 / 0.1);
+  --term-edge: rgb(214 224 232 / 0.14);
+  --term-edge-hi: rgb(214 224 232 / 0.2);
+  --term-edge-acc: rgb(200 255 61 / 0.55);
+  --term-dot: rgb(214 224 232 / 0.18);
+  --term-scroll: rgb(214 224 232 / 0.2);
+  --term-chip-line: rgb(214 224 232 / 0.16);
+  --term-chip-bg: rgb(214 224 232 / 0.04);
+  --term-hl: rgb(200 255 61 / 0.1);
+  --term-shadow: rgb(0 0 0 / 0.35);
 
   --shadow-1: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 12px 32px -18px rgb(0 0 0 / 0.9);
   --shadow-2: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 24px 64px -24px rgb(0 0 0 / 0.95);
@@ -156,6 +172,25 @@
     --shadow-1: 0 1px 0 rgb(255 255 255 / 0.8) inset, 0 12px 32px -20px rgb(10 16 24 / 0.28);
     --shadow-2: 0 1px 0 rgb(255 255 255 / 0.8) inset, 0 24px 64px -28px rgb(10 16 24 / 0.35);
     --header-bg: rgb(238 242 245 / 0.82);
+    --term-bg: #ffffff;
+    --term-ink: #22303d;
+    --term-dim: #56636f;
+    --term-cmd: #0a1018;
+    --term-acc: #3e6a00;
+    --term-ok: #17773c;
+    --term-warn: #8a5a00;
+    --term-err: #c2183f;
+    --term-blue: #00687f;
+    --term-line: rgb(10 16 24 / 0.09);
+    --term-edge: #d3dbe2;
+    --term-edge-hi: #b3c0cb;
+    --term-edge-acc: rgb(62 106 0 / 0.5);
+    --term-dot: rgb(10 16 24 / 0.14);
+    --term-scroll: rgb(10 16 24 / 0.2);
+    --term-chip-line: #d3dbe2;
+    --term-chip-bg: #f4f7f9;
+    --term-hl: rgb(62 106 0 / 0.1);
+    --term-shadow: rgb(10 16 24 / 0.12);
     color-scheme: light;
   }
 }
@@ -192,5 +227,24 @@
   --shadow-1: 0 1px 0 rgb(255 255 255 / 0.8) inset, 0 12px 32px -20px rgb(10 16 24 / 0.28);
   --shadow-2: 0 1px 0 rgb(255 255 255 / 0.8) inset, 0 24px 64px -28px rgb(10 16 24 / 0.35);
   --header-bg: rgb(238 242 245 / 0.82);
+  --term-bg: #ffffff;
+  --term-ink: #22303d;
+  --term-dim: #56636f;
+  --term-cmd: #0a1018;
+  --term-acc: #3e6a00;
+  --term-ok: #17773c;
+  --term-warn: #8a5a00;
+  --term-err: #c2183f;
+  --term-blue: #00687f;
+  --term-line: rgb(10 16 24 / 0.09);
+  --term-edge: #d3dbe2;
+  --term-edge-hi: #b3c0cb;
+  --term-edge-acc: rgb(62 106 0 / 0.5);
+  --term-dot: rgb(10 16 24 / 0.14);
+  --term-scroll: rgb(10 16 24 / 0.2);
+  --term-chip-line: #d3dbe2;
+  --term-chip-bg: #f4f7f9;
+  --term-hl: rgb(62 106 0 / 0.1);
+  --term-shadow: rgb(10 16 24 / 0.12);
   color-scheme: light;
 }

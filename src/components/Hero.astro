@@ -169,6 +169,12 @@ const years = yearsSince(careerStart);
     margin-top: 24px;
     --term-h: 236px;
   }
+  /* Teléfonos: la terminal llega plegada en una barra; aire claro arriba y abajo. */
+  @media (max-width: 767.98px) {
+    .hero__term {
+      margin-block: 32px 8px;
+    }
+  }
   .hero__channels {
     grid-area: channels;
     margin-top: 32px;
