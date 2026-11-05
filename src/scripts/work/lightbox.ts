@@ -14,7 +14,7 @@ export interface LbItem {
 let dialog: HTMLDialogElement | null = null;
 let list: LbItem[] = [];
 let index = 0;
-let opener: HTMLElement | null = null;
+let opener: (() => HTMLElement | undefined) | null = null;
 let onMove: ((i: number) => void) | null = null;
 
 const isLight = () => document.documentElement.dataset.theme === 'light';
@@ -38,14 +38,15 @@ function show(i: number): void {
   onMove?.(index);
 }
 
-export function openLightbox(items: LbItem[], i: number, from: HTMLElement, move?: (i: number) => void): void {
+/** `restore` devuelve el elemento que recibe el foco al cerrar (la captura actual de la galería). */
+export function openLightbox(items: LbItem[], i: number, restore: () => HTMLElement | undefined, move?: (i: number) => void): void {
   dialog ??= init();
   if (!dialog || typeof dialog.showModal !== 'function') {
     window.location.href = items[i].src; // navegador sin <dialog>: abre la imagen
     return;
   }
   list = items;
-  opener = from;
+  opener = restore;
   onMove = move ?? null;
   show(i);
   dialog.showModal();
@@ -62,7 +63,7 @@ function init(): HTMLDialogElement | null {
 
   d.addEventListener('close', () => {
     document.documentElement.classList.remove('is-locked');
-    opener?.focus({ preventScroll: true });
+    opener?.()?.focus({ preventScroll: true });
   });
   // Clic en el fondo (fuera de la imagen y de los controles) cierra.
   $('[data-lb-stage]', d)?.addEventListener('click', (e) => {

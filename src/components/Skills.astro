@@ -308,6 +308,10 @@ const evidence = (f: Front): Evidence[] => {
   }
 
   /* ---------- dónde se usó ---------- */
+  /* En pantallas estrechas va justo bajo el selector, para ver el efecto sin hacer scroll. */
+  .where {
+    order: -1;
+  }
   .where-body {
     display: grid;
     gap: var(--space-m);
@@ -412,6 +416,9 @@ const evidence = (f: Front): Evidence[] => {
   .certs {
     align-content: start;
   }
+  .certs .chip {
+    white-space: normal;
+  }
 
   @media (min-width: 768px) {
     .fronts {
@@ -433,6 +440,7 @@ const evidence = (f: Front): Evidence[] => {
       align-items: start;
     }
     .where {
+      order: 0;
       position: sticky;
       top: calc(var(--header-h) + var(--space-l));
     }

@@ -75,7 +75,7 @@ function setup(g: HTMLElement): void {
     a.addEventListener('click', (e) => {
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; // nueva pestaña: comportamiento normal
       e.preventDefault();
-      openLightbox(items(), i, a, (k) => go(k));
+      openLightbox(items(), i, () => links[current], (k) => go(k));
     }),
   );
 

@@ -175,8 +175,11 @@ const { title, run, done, layers, facts } = Astro.props;
   }
   .facts > div {
     display: flex;
-    flex-direction: column-reverse;
-    gap: 2px;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .facts dt {
+    order: 1;
   }
   .fact-n {
     font-family: var(--font-display);

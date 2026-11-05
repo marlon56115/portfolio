@@ -412,6 +412,10 @@ const ch = (i: number) => String(i + 1).padStart(2, '0');
     visibility: hidden;
     opacity: 0;
     translate: 0 8px;
+    pointer-events: none;
+    /* se oculta (visibility) al terminar de desvanecerse */
+    transition-delay: 0s, 0s, var(--dur-2);
+    transition-duration: var(--dur-2), var(--dur-2), 0s;
   }
   .jp {
     display: grid;

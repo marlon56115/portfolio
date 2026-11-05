@@ -248,17 +248,20 @@ const n = slides.length;
     background-size: var(--cell) var(--cell);
   }
   .slide--phone .shot {
-    display: grid;
-    place-items: center;
-    padding: 4% 0;
+    position: relative;
   }
+  /* El teléfono se ajusta al alto de la diapositiva; el ancho sale de la proporción. */
   .phone {
+    position: absolute;
+    top: 6%;
+    bottom: 6%;
+    left: 50%;
+    translate: -50% 0;
     display: block;
-    height: 100%;
     aspect-ratio: 780 / 1688;
-    padding: 5px;
+    padding: 4px;
     border: 1px solid var(--line-strong);
-    border-radius: 18px;
+    border-radius: 16px;
     background: var(--term-bg);
     box-shadow: var(--shadow-2);
     overflow: hidden;
