@@ -21,9 +21,9 @@ const es = {
   ...facts,
   htmlLang: 'es',
   meta: {
-    title: 'Marlon Guerra · Lead Full-Stack Engineer',
+    title: 'Marlon Guerra · Lead DevOps Engineer',
     description:
-      'Ingeniero full-stack en El Salvador. Desarrollo, despliegue, infraestructura y bases de datos de punta a punta, con experiencia fuerte en agentes de IA e integraciones con LLMs.',
+      'Ingeniero DevOps en El Salvador: CI/CD, contenedores, Kubernetes, infraestructura como código y observabilidad. También desarrollo backend y automatizo operación con agentes de IA.',
   },
   // Orden = orden de las secciones en la página.
   nav: { about: 'inicio', work: 'experiencia', projects: 'proyectos', skills: 'stack', system: 'autoalojado', contact: 'contacto' },
@@ -45,12 +45,12 @@ const es = {
     backToTop: 'Volver arriba',
   },
   footer: {
-    line: 'Diseñado y construido a mano. Autoalojado, sin trackers ni cookies de terceros.',
+    line: 'Autoalojado. Sin trackers ni cookies de terceros.',
     version: 'versión',
   },
   notFound: {
     title: 'Señal perdida',
-    body: 'Esta ruta no existe. Puede que el enlace esté roto o que la página se haya movido.',
+    body: 'Esta página no existe o se movió.',
     home: 'Volver al inicio',
   },
 };
@@ -61,9 +61,9 @@ const en: Common = {
   ...facts,
   htmlLang: 'en',
   meta: {
-    title: 'Marlon Guerra · Lead Full-Stack Engineer',
+    title: 'Marlon Guerra · Lead DevOps Engineer',
     description:
-      'Full-stack engineer based in El Salvador. Development, deployment, infrastructure and databases end to end, with strong hands-on experience in AI agents and LLM integrations.',
+      'DevOps engineer based in El Salvador: CI/CD, containers, Kubernetes, infrastructure as code and observability. I also build backends and automate operations with AI agents.',
   },
   nav: { about: 'home', work: 'experience', projects: 'projects', skills: 'stack', system: 'self-hosted', contact: 'contact' },
   ui: {
@@ -84,12 +84,12 @@ const en: Common = {
     backToTop: 'Back to top',
   },
   footer: {
-    line: 'Designed and built by hand. Self-hosted, no trackers, no third-party cookies.',
+    line: 'Self-hosted. No trackers, no third-party cookies.',
     version: 'version',
   },
   notFound: {
     title: 'Signal lost',
-    body: 'This route does not exist. The link may be broken or the page may have moved.',
+    body: 'This page doesn’t exist or has moved.',
     home: 'Back to home',
   },
 };

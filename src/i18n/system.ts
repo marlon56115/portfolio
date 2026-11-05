@@ -8,9 +8,8 @@ type Stage = { id: string; t: string; meta: string; d: string };
 const es = {
   system: {
     label: 'autoalojado',
-    title: 'Este sitio corre en infraestructura que opero yo',
-    lead:
-      'Sin plataformas gestionadas: un servidor en Go que construyo, empaqueto y despliego con GitOps sobre infraestructura propia. El panel de abajo es en vivo.',
+    title: 'Este sitio corre en mi infraestructura',
+    lead: 'Un servidor en Go desplegado con GitOps sobre infraestructura propia, con métricas en vivo.',
     live: {
       title: 'señal en vivo',
       connecting: 'conectando…',
@@ -29,29 +28,27 @@ const es = {
       memoryNote: 'en uso',
       idle: 'en reposo',
       idleNote: 'métricas de carga en pausa',
-      foot: 'solo agregados · se actualiza cada 15 s mientras lo ves',
+      foot: 'se actualiza cada 15 s',
       noscript: 'Activa JavaScript para ver las cifras en vivo.',
     },
     path: {
       title: 'Camino de una petición',
-      lead: 'Pasa el cursor o toca cada etapa.',
       ping: 'tu última petición',
       stages: [
-        { id: 'browser', t: 'Tu navegador', meta: 'HTTPS', d: 'Pide la página cifrada a la red de borde; nunca habla directo con el servidor.' },
-        { id: 'edge', t: 'Borde', meta: 'TLS · caché', d: 'Termina TLS, sirve desde caché lo que no cambia y frena el tráfico abusivo antes de que entre.' },
-        { id: 'cluster', t: 'Clúster', meta: 'orquestación', d: 'Mantiene el servicio vivo: lo reinicia si falla y cambia de versión sin cortar el tráfico.' },
-        { id: 'service', t: 'Servicio', meta: 'Go', d: 'Un binario de Go con todo el sitio embebido: responde las páginas y este panel desde memoria.' },
+        { id: 'browser', t: 'Tu navegador', meta: 'HTTPS', d: 'Pide la página cifrada al borde, nunca directo al servidor.' },
+        { id: 'edge', t: 'Borde', meta: 'TLS · caché', d: 'Termina TLS, cachea lo estático y frena el tráfico abusivo.' },
+        { id: 'cluster', t: 'Clúster', meta: 'orquestación', d: 'Reinicia el servicio si falla y cambia de versión sin cortes.' },
+        { id: 'service', t: 'Servicio', meta: 'Go', d: 'Un binario de Go con el sitio embebido, servido desde memoria.' },
       ] as Stage[],
     },
     ship: {
       title: 'Cómo sale una versión',
-      lead: 'De un commit a producción sin pasos manuales.',
       stages: [
-        { id: 'commit', t: 'Commit', meta: 'git', d: 'Todo empieza en Git: código, configuración e infraestructura viven versionados.' },
-        { id: 'ci', t: 'CI', meta: 'tests · escaneo', d: 'Cada cambio pasa pruebas, chequeo de tipos y un escaneo de vulnerabilidades antes de poder publicarse.' },
-        { id: 'image', t: 'Imagen', meta: 'versión fija', d: 'Una imagen mínima con versión exacta, SBOM y procedencia; las bases van fijadas por digest. Nunca "latest".' },
-        { id: 'gitops', t: 'GitOps', meta: 'pull', d: 'La infraestructura lee el estado deseado desde Git y lo aplica por su cuenta; nadie despliega a mano.' },
-        { id: 'live', t: 'En vivo', meta: 'sin cortes', d: 'La versión nueva recibe tráfico solo cuando pasa sus chequeos de salud; la anterior sale después.' },
+        { id: 'commit', t: 'Commit', meta: 'git', d: 'Código, configuración e infraestructura, versionados en Git.' },
+        { id: 'ci', t: 'CI', meta: 'tests · escaneo', d: 'Pruebas, chequeo de tipos y escaneo de vulnerabilidades.' },
+        { id: 'image', t: 'Imagen', meta: 'versión fija', d: 'Imagen mínima con SBOM y procedencia; bases fijadas por digest.' },
+        { id: 'gitops', t: 'GitOps', meta: 'pull', d: 'El clúster lee el estado deseado de Git y lo aplica solo.' },
+        { id: 'live', t: 'En vivo', meta: 'sin cortes', d: 'La versión nueva recibe tráfico al pasar sus chequeos de salud.' },
       ] as Stage[],
     },
     toolbox: {
@@ -66,9 +63,8 @@ type System = typeof es;
 const en: System = {
   system: {
     label: 'self-hosted',
-    title: 'This site runs on infrastructure I operate',
-    lead:
-      'No managed platform: a Go server I build, package and ship with GitOps onto self-hosted infrastructure. The panel below is live.',
+    title: 'This site runs on my own infrastructure',
+    lead: 'A Go server shipped with GitOps onto self-hosted infrastructure, with live metrics.',
     live: {
       title: 'live signal',
       connecting: 'connecting…',
@@ -87,29 +83,27 @@ const en: System = {
       memoryNote: 'in use',
       idle: 'idle',
       idleNote: 'load metrics paused',
-      foot: 'aggregates only · refreshed every 15 s while you watch',
+      foot: 'refreshes every 15 s',
       noscript: 'Enable JavaScript to see the live numbers.',
     },
     path: {
       title: 'Path of a request',
-      lead: 'Hover or tap each stage.',
       ping: 'your last request',
       stages: [
-        { id: 'browser', t: 'Your browser', meta: 'HTTPS', d: 'Requests the page, encrypted, from the edge network; it never talks to the server directly.' },
-        { id: 'edge', t: 'Edge', meta: 'TLS · cache', d: 'Terminates TLS, serves what does not change from cache and stops abusive traffic before it gets in.' },
-        { id: 'cluster', t: 'Cluster', meta: 'orchestration', d: 'Keeps the service alive: restarts it if it fails and swaps versions without dropping traffic.' },
-        { id: 'service', t: 'Service', meta: 'Go', d: 'A Go binary with the whole site embedded: it answers pages and this panel straight from memory.' },
+        { id: 'browser', t: 'Your browser', meta: 'HTTPS', d: 'Requests the page, encrypted, from the edge, never the server.' },
+        { id: 'edge', t: 'Edge', meta: 'TLS · cache', d: 'Terminates TLS, caches static assets and stops abusive traffic.' },
+        { id: 'cluster', t: 'Cluster', meta: 'orchestration', d: 'Restarts the service if it fails and swaps versions with zero downtime.' },
+        { id: 'service', t: 'Service', meta: 'Go', d: 'A Go binary with the site embedded, served from memory.' },
       ],
     },
     ship: {
       title: 'How a release ships',
-      lead: 'From a commit to production with no manual steps.',
       stages: [
-        { id: 'commit', t: 'Commit', meta: 'git', d: 'Everything starts in Git: code, configuration and infrastructure are all versioned.' },
-        { id: 'ci', t: 'CI', meta: 'tests · scan', d: 'Every change goes through tests, type checks and a vulnerability scan before it can be published.' },
-        { id: 'image', t: 'Image', meta: 'pinned', d: 'A minimal image with an exact version, SBOM and provenance; base images are pinned by digest. Never "latest".' },
-        { id: 'gitops', t: 'GitOps', meta: 'pull', d: 'The infrastructure reads the desired state from Git and applies it on its own; nobody deploys by hand.' },
-        { id: 'live', t: 'Live', meta: 'zero downtime', d: 'The new version only gets traffic once it passes its health checks; the old one leaves afterwards.' },
+        { id: 'commit', t: 'Commit', meta: 'git', d: 'Code, configuration and infrastructure, versioned in Git.' },
+        { id: 'ci', t: 'CI', meta: 'tests · scan', d: 'Tests, type checks and a vulnerability scan.' },
+        { id: 'image', t: 'Image', meta: 'pinned', d: 'Minimal image with SBOM and provenance; bases pinned by digest.' },
+        { id: 'gitops', t: 'GitOps', meta: 'pull', d: 'The cluster reads the desired state from Git and applies it.' },
+        { id: 'live', t: 'Live', meta: 'zero downtime', d: 'The new version gets traffic once its health checks pass.' },
       ],
     },
     toolbox: {

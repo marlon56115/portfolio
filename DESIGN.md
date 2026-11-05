@@ -19,6 +19,12 @@ documento y se corrige el código.
 - **Tipo:** monoespaciada con eje de ancho para display (Martian Mono), sans limpia para leer (Geist),
   mono de código para datos y terminal (JetBrains Mono).
 
+**Texto:** posicionamiento *Lead DevOps Engineer* (CI/CD, contenedores, Kubernetes, infraestructura,
+observabilidad, IA aplicada a operación; también desarrolla). Frases cortas con cifras y hechos; sin
+taglines de relleno, sin explicar cómo está hecha la página ni instrucciones de uso obvias, y sin
+"en producción" como muletilla. Si un visitante no gana información con la frase, se quita.
+Español e inglés siempre en paralelo (`src/i18n/*.ts`).
+
 **Prohibido** (pedido del usuario: "se parece a la página de Claude Code"): fondos beige/crema, acentos
 naranja/terracota, IBM Plex, degradados violeta-azul "de IA", blobs con glassmorphism, emoji, el look
 genérico de landing SaaS.

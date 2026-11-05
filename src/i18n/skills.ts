@@ -90,21 +90,20 @@ const withV = (groups: Group[]) => groups.map((g) => ({ ...g, v: g.items.map((i)
 const es = {
   skills: {
     label: 'stack',
-    title: 'Cinco frentes, un mismo oficio',
-    lead: 'Elige un frente: se encienden las herramientas que uso en él y dónde las he puesto en producción.',
+    title: 'Herramientas y formación',
     all: 'todo',
     filter: 'Filtrar herramientas por frente',
     tools: 'herramientas',
     usedIn: 'dónde lo usé',
-    pick: 'Elige un frente para ver en qué puestos y proyectos lo he usado.',
+    pick: 'Elige un frente para ver dónde lo usé.',
     jobTag: 'trabajo',
     projectTag: 'proyecto',
     fronts: [
-      { k: 'dev', t: 'Desarrollo', d: 'APIs, servicios e interfaces.' },
       { k: 'deploy', t: 'Despliegue', d: 'CI/CD, contenedores y GitOps.' },
       { k: 'infra', t: 'Infraestructura', d: 'Kubernetes, Linux y nube.' },
-      { k: 'data', t: 'Bases de datos', d: 'Modelado, SQL y rendimiento.' },
       { k: 'ai', t: 'IA aplicada', d: 'Agentes, LLMs y automatización.' },
+      { k: 'data', t: 'Bases de datos', d: 'Modelado, SQL y rendimiento.' },
+      { k: 'dev', t: 'Desarrollo', d: 'APIs, servicios e interfaces.' },
     ] as { k: Front; t: string; d: string }[],
     groups: withV([
       { k: 'languages', t: 'Lenguajes', items: languages },
@@ -129,8 +128,8 @@ const es = {
     ]),
     eduTitle: 'Formación',
     edu: [
-      { t: 'Ingeniería de Sistemas Informáticos', s: 'Universidad de El Salvador · 2023', n: 'Graduado con honores, primer lugar de la promoción.', honor: true },
-      { t: 'Bachillerato Técnico en Infraestructura Tecnológica', s: 'CE INSA · 2017', n: 'Graduado con honores, primer lugar de la promoción.', honor: true },
+      { t: 'Ingeniería de Sistemas Informáticos', s: 'Universidad de El Salvador · 2023', n: 'Graduado con honores.', honor: true },
+      { t: 'Bachillerato Técnico en Infraestructura Tecnológica', s: 'CE INSA · 2017', n: 'Graduado con honores.', honor: true },
       { t: 'Programa Jóvenes Talento en TI', s: 'Universidad Francisco Gavidia · 2017', n: '', honor: false },
       { t: 'Inglés, 20 niveles', s: 'Universidad de El Salvador · 2024', n: 'Nivel profesional.', honor: false },
     ],
@@ -145,21 +144,20 @@ type Skills = typeof es;
 const en: Skills = {
   skills: {
     label: 'stack',
-    title: 'Five fronts, one craft',
-    lead: 'Pick a front: the tools I use for it light up, along with where I have run them in production.',
+    title: 'Tools and education',
     all: 'all',
     filter: 'Filter tools by front',
     tools: 'tools',
     usedIn: 'where I used it',
-    pick: 'Pick a front to see the roles and projects where I have used it.',
+    pick: 'Pick a front to see where I used it.',
     jobTag: 'job',
     projectTag: 'project',
     fronts: [
-      { k: 'dev', t: 'Development', d: 'APIs, services and interfaces.' },
       { k: 'deploy', t: 'Deployment', d: 'CI/CD, containers and GitOps.' },
       { k: 'infra', t: 'Infrastructure', d: 'Kubernetes, Linux and cloud.' },
-      { k: 'data', t: 'Databases', d: 'Modeling, SQL and performance.' },
       { k: 'ai', t: 'Applied AI', d: 'Agents, LLMs and automation.' },
+      { k: 'data', t: 'Databases', d: 'Modeling, SQL and performance.' },
+      { k: 'dev', t: 'Development', d: 'APIs, services and interfaces.' },
     ],
     groups: withV([
       { k: 'languages', t: 'Languages', items: languages },
@@ -184,8 +182,8 @@ const en: Skills = {
     ]),
     eduTitle: 'Education',
     edu: [
-      { t: 'B.Sc. Computer Systems Engineering', s: 'Universidad de El Salvador · 2023', n: 'Graduated with honors, top of the class.', honor: true },
-      { t: 'Technical High School, IT Infrastructure', s: 'CE INSA · 2017', n: 'Graduated with honors, valedictorian.', honor: true },
+      { t: 'B.Sc. Computer Systems Engineering', s: 'Universidad de El Salvador · 2023', n: 'Graduated with honors.', honor: true },
+      { t: 'Technical High School, IT Infrastructure', s: 'CE INSA · 2017', n: 'Graduated with honors.', honor: true },
       { t: 'Young Talent IT Program', s: 'Universidad Francisco Gavidia · 2017', n: '', honor: false },
       { t: 'English, 20 levels', s: 'Universidad de El Salvador · 2024', n: 'Professional proficiency.', honor: false },
     ],

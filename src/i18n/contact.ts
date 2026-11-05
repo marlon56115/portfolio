@@ -15,10 +15,8 @@ export const timeZone = 'America/El_Salvador';
 const es = {
   contact: {
     label: 'contacto',
-    // Título en dos partes: la segunda va resaltada.
-    titleA: 'Si tiene que funcionar en producción,',
-    titleB: 'hablemos.',
-    lead: 'Backend, plataforma, infraestructura o producto con IA. Cuéntame qué estás construyendo y en qué punto está; te respondo con algo concreto.',
+    title: 'Hablemos.',
+    lead: 'Plataforma, infraestructura, CI/CD o automatización con IA. Cuéntame qué necesitas.',
 
     // bloque principal
     emailLabel: 'correo directo',
@@ -31,10 +29,10 @@ const es = {
     // tarjetas
     linkedin: 'LinkedIn',
     linkedinHandle: 'in/marlonguerradev',
-    linkedinNote: 'Trayectoria completa y recomendaciones',
+    linkedinNote: 'Trayectoria y recomendaciones',
     github: 'GitHub',
     githubHandle: 'marlon56115',
-    githubNote: 'Código, proyectos y cómo trabajo',
+    githubNote: 'Código y proyectos',
     external: 'se abre en una pestaña nueva',
 
     // panel de estado
@@ -63,7 +61,7 @@ const es = {
 
     // borrador
     composeTitle: 'borrador.eml',
-    composeLead: 'Escribe aquí y se abre tu app de correo con todo listo. Nada se envía desde esta página.',
+    composeLead: 'Se abre tu app de correo con el mensaje listo.',
     name: 'Tu nombre',
     namePh: 'Ana Pérez',
     topic: 'Tema',
@@ -86,9 +84,8 @@ type Contact = typeof es;
 const en: Contact = {
   contact: {
     label: 'contact',
-    titleA: 'If it has to work in production,',
-    titleB: 'let’s talk.',
-    lead: 'Backend, platform, infrastructure or AI-powered products. Tell me what you are building and where it stands; you’ll get a concrete answer back.',
+    title: 'Let’s talk.',
+    lead: 'Platform, infrastructure, CI/CD or AI automation. Tell me what you need.',
 
     emailLabel: 'direct email',
     copy: 'Copy email',
@@ -99,10 +96,10 @@ const en: Contact = {
 
     linkedin: 'LinkedIn',
     linkedinHandle: 'in/marlonguerradev',
-    linkedinNote: 'Full track record and recommendations',
+    linkedinNote: 'Track record and recommendations',
     github: 'GitHub',
     githubHandle: 'marlon56115',
-    githubNote: 'Code, projects and how I work',
+    githubNote: 'Code and projects',
     external: 'opens in a new tab',
 
     statusTitle: 'status',
@@ -129,7 +126,7 @@ const en: Contact = {
     refsValue: 'Available on request',
 
     composeTitle: 'draft.eml',
-    composeLead: 'Write it here and your mail app opens with everything filled in. Nothing is sent from this page.',
+    composeLead: 'Opens your mail app with the message ready.',
     name: 'Your name',
     namePh: 'Jane Doe',
     topic: 'Topic',
