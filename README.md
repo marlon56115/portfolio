@@ -1,6 +1,6 @@
 # portfolio
 
-Portafolio de Marlon Guerra, Lead Full-Stack Engineer: **https://marlon.mihomeserver.com**. Autoalojado en infraestructura propia.
+Portafolio de Marlon Guerra, Lead DevOps Engineer: **https://marlon.mihomeserver.com**. Autoalojado en infraestructura propia.
 
 - **Sitio:** Astro, 100 % estático, en español e inglés, con tema claro y oscuro, una terminal simulada (corre solo en el navegador, sin acceso al servidor) y un panel de métricas en vivo.
 - **Servidor:** un binario de Go sin dependencias externas que embebe el sitio, añade las cabeceras de seguridad, elige el idioma de la primera visita y sirve `/api/status` (solo agregados).

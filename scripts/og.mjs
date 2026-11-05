@@ -38,8 +38,8 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
   <text x="102" y="116" text-anchor="middle" font-family="${mono}" font-weight="700" font-size="19" fill="#070b11">MG</text>
   <text x="140" y="114" font-family="${mono}" font-size="22" fill="#a8b6c3">marlon<tspan fill="#c8ff3d">.</tspan>guerra</text>
   <text x="76" y="290" font-family="${mono}" font-weight="700" font-size="92" fill="#e3eaf0" letter-spacing="-4">Marlon Guerra</text>
-  <text x="80" y="352" font-family="${mono}" font-size="32" fill="#c8ff3d">Lead Full-Stack Engineer</text>
-  <text x="80" y="404" font-family="${sans}" font-size="27" fill="#a8b6c3">Development · Deployment · Infrastructure · Databases · AI</text>
+  <text x="80" y="352" font-family="${mono}" font-size="32" fill="#c8ff3d">Lead DevOps Engineer</text>
+  <text x="80" y="404" font-family="${sans}" font-size="27" fill="#a8b6c3">CI/CD · Kubernetes · Infrastructure · Observability · AI</text>
   <rect x="80" y="${H - 64}" width="8" height="8" fill="#5be38a"/>
   <text x="100" y="${H - 55}" font-family="${mono}" font-size="20" fill="#7e8e9e">El Salvador · self-hosted</text>
 </svg>`;
