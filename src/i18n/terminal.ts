@@ -1,6 +1,6 @@
 // Textos de la terminal del hero. Dueño en la fase 2: pf-hero.
 // Lo usan Terminal.astro / hero/TerminalWindow.astro (vía dict) y src/scripts/terminal.ts (importa `terminal`).
-// Privacidad: host genérico; nada de hardware, SO, kernel, versiones, namespaces ni nombres internos.
+// Privacidad: host genérico; nada de hardware, sistema operativo, versiones ni nombres internos (DESIGN.md §7).
 // Honestidad: es una shell simulada en el navegador; se dice en la interfaz y en `help`.
 
 const prompt = { user: 'guest', host: 'marlon', path: '~' };

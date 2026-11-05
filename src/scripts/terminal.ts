@@ -349,13 +349,11 @@ export function initTerminal(ctx: Ctx): void {
     out.setAttribute('aria-live', 'off');
     out.replaceChildren();
     print([dim(s.welcome)]);
-    void (async () => {
-      await sleep(500, true);
-      await exec('whoami', true, true);
-      await sleep(650, true);
-      await exec('skills --top', true, true);
-      out.setAttribute('aria-live', 'polite');
-    })();
+    // Se encola de forma síncrona: un comando pedido al mismo tiempo (chip, canal) sale después de la intro.
+    queue = queue.then(() => sleep(500, true));
+    void exec('whoami', true, true);
+    queue = queue.then(() => sleep(650, true));
+    void exec('skills --top', true, true).then(() => out.setAttribute('aria-live', 'polite'));
   };
   if ('IntersectionObserver' in window) {
     const io = new IntersectionObserver(
