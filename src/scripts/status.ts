@@ -16,25 +16,6 @@ export interface Status {
   cpuHistory?: number[];
   /** Ida y vuelta de esta petición medida en el navegador (ms). */
   latencyMs?: number;
-  /**
-   * @deprecated Ya no se publican (privacidad). Quedan solo para que el código anterior de la
-   * terminal compile hasta que pf-hero lo reemplace; siempre son `undefined`.
-   */
-  memoryTotalBytes?: number;
-  /** @deprecated ver memoryTotalBytes */
-  cpuTempC?: number;
-  /** @deprecated ver memoryTotalBytes */
-  netRxBps?: number;
-  /** @deprecated ver memoryTotalBytes */
-  netTxBps?: number;
-  /** @deprecated ver memoryTotalBytes */
-  pods?: number;
-  /** @deprecated ver memoryTotalBytes */
-  namespaces?: number;
-  /** @deprecated ver memoryTotalBytes */
-  k8s?: string;
-  /** @deprecated ver memoryTotalBytes */
-  os?: string;
 }
 
 type Listener = (s: Status | null) => void;
@@ -138,16 +119,3 @@ export const pct = (v: number) => `${(v * 100).toFixed(v < 0.1 ? 1 : 0)}%`;
 /** Número con separadores del idioma: 12 345 / 12,345. */
 export const fmtCount = (n: number, lang = 'en') => new Intl.NumberFormat(lang === 'es' ? 'es-SV' : 'en-US').format(n);
 export const fmtMs = (ms: number) => `${Math.max(1, Math.round(ms))} ms`;
-
-/** @deprecated solo para el código anterior de la terminal. */
-export function fmtBytes(b: number): string {
-  const u = ['B', 'KB', 'MB', 'GB', 'TB'];
-  let i = 0;
-  while (b >= 1024 && i < u.length - 1) {
-    b /= 1024;
-    i++;
-  }
-  return `${b.toFixed(b < 10 && i > 0 ? 1 : 0)} ${u[i]}`;
-}
-/** @deprecated solo para el código anterior de la terminal. */
-export const fmtRate = (bps: number) => `${fmtBytes(bps)}/s`;

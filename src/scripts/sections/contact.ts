@@ -68,6 +68,7 @@ function initCopy(root: HTMLElement): void {
   });
 }
 
+/** Portapapeles moderno (requiere contexto seguro). Si no está, el llamador selecciona el correo y pide Ctrl/⌘ C. */
 async function copyText(value: string): Promise<boolean> {
   try {
     if (navigator.clipboard && window.isSecureContext) {
@@ -75,26 +76,9 @@ async function copyText(value: string): Promise<boolean> {
       return true;
     }
   } catch {
-    /* sigue con el método antiguo */
+    /* permiso denegado o API ausente */
   }
-  // Respaldo: textarea fuera de pantalla + execCommand (navegadores viejos o contexto no seguro).
-  try {
-    const ta = document.createElement('textarea');
-    ta.value = value;
-    ta.setAttribute('readonly', '');
-    ta.style.position = 'fixed';
-    ta.style.top = '0';
-    ta.style.left = '-9999px';
-    ta.style.fontSize = '16px'; // evita el zoom de iOS
-    document.body.append(ta);
-    ta.select();
-    ta.setSelectionRange(0, value.length);
-    const ok = document.execCommand('copy');
-    ta.remove();
-    return ok;
-  } catch {
-    return false;
-  }
+  return false;
 }
 
 function selectNode(node: Node): void {
