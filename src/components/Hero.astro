@@ -150,11 +150,24 @@ const years = yearsSince(careerStart);
       display: none;
     }
   }
+  /* Teléfonos: la terminal está justo debajo, así que el atajo sobra; los dos botones caben en una fila. */
+  @media (max-width: 767.98px) {
+    .hero__try {
+      display: none;
+    }
+    .hero__cta {
+      gap: 8px;
+    }
+    .hero__cta .btn {
+      flex: 1 1 auto;
+      padding-inline: 14px;
+    }
+  }
   .hero__term {
     grid-area: term;
     min-width: 0;
-    margin-top: 28px;
-    --term-h: 200px;
+    margin-top: 24px;
+    --term-h: 236px;
   }
   .hero__channels {
     grid-area: channels;

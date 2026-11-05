@@ -41,7 +41,7 @@ const pad = (v: string, n: number) => v.padEnd(n, ' ');
   </div>
 
   <form class="term__line" data-terminal-form data-js-only autocomplete="off">
-    <label class="term__prompt" for="term-in"><span class="u">{p.user}</span>@<span class="h">{p.host}</span>:<span class="p">{p.path}</span>$</label>
+    <label class="term__prompt" for="term-in"><span class="term__who"><span class="u">{p.user}</span>@<span class="h">{p.host}</span>:</span><span class="p">{p.path}</span>$</label>
     <span class="term__typed" data-terminal-typed aria-hidden="true"></span><span class="term__caret" aria-hidden="true"></span>
     <input
       id="term-in"
@@ -142,8 +142,7 @@ const pad = (v: string, n: number) => v.padEnd(n, ' ');
   }
 
   .term__out {
-    flex: 1;
-    min-height: 0;
+    flex: none;
     height: var(--term-h, 232px);
     overflow-y: auto;
     padding: 12px 14px 4px;
@@ -338,8 +337,7 @@ const pad = (v: string, n: number) => v.padEnd(n, ' ');
     text-transform: uppercase;
   }
   @media (max-width: 419.98px) {
-    .term__prompt .u,
-    .term__prompt .h {
+    .term__who {
       display: none;
     }
     .term__status [data-hero-status] {
