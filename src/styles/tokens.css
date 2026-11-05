@@ -1,0 +1,205 @@
+/*
+ * Tokens de diseño · concepto "Signal": osciloscopio + placa de circuito.
+ * Oscuro primero. Valores y contrastes documentados en DESIGN.md.
+ * Congelado para la fase 2: solo cambios aditivos (tokens nuevos), nunca renombrar.
+ */
+
+:root {
+  /* ---------- color · oscuro (por defecto) ---------- */
+  --bg: #070b11; /* casi negro azulado */
+  --bg-2: #0a0f16; /* franja alterna / hundido */
+  --surface: #0c121a; /* paneles */
+  --surface-2: #111a24; /* paneles elevados, hover */
+  --surface-3: #172230; /* controles */
+  --line: #1c2834; /* filetes */
+  --line-strong: #2b3a4a; /* bordes de controles */
+  --ink: #e3eaf0; /* texto principal (16.2:1) */
+  --ink-2: #a8b6c3; /* texto secundario (9.5:1) */
+  --muted: #7e8e9e; /* etiquetas, metadatos (5.9:1) */
+
+  --volt: #c8ff3d; /* acento principal · relleno */
+  --volt-ink: #c8ff3d; /* acento como texto */
+  --on-volt: #070b11; /* texto sobre relleno volt */
+  --volt-soft: rgb(200 255 61 / 0.1);
+  --ion: #38e1ff; /* datos, enlaces · gráficos */
+  --ion-ink: #38e1ff; /* ion como texto */
+  --ion-soft: rgb(56 225 255 / 0.1);
+  --flare: #ff5c7a; /* tercer acento: raro (error, "en caliente") */
+
+  /* botón primario: lima con tinta en oscuro; en claro, tinta con texto lima (el lima no es superficie sobre claro) */
+  --primary-bg: #c8ff3d;
+  --primary-fg: #070b11;
+  --primary-bg-hover: #d9ff7a;
+
+  --ok: #5be38a;
+  --warn: #ffc93d;
+  --err: #ff5c7a;
+  --focus: #38e1ff;
+
+  /* fondo animado (fx/background.ts los lee al cambiar de tema) */
+  --fx-dot: #a8b6c32e;
+  --fx-mark: #a8b6c347;
+  --fx-hot: #c8ff3d;
+  --fx-cool: #38e1ff;
+
+  /* terminal: siempre oscura */
+  --term-bg: #05080c;
+  --term-ink: #d6e0e8;
+  --term-dim: #6b7b8b;
+
+  --shadow-1: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 12px 32px -18px rgb(0 0 0 / 0.9);
+  --shadow-2: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 24px 64px -24px rgb(0 0 0 / 0.95);
+  --header-bg: rgb(7 11 17 / 0.78);
+
+  color-scheme: dark;
+
+  /* ---------- tipografía ---------- */
+  --font-display: 'Martian Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* escala fluida 360 → 1440 px */
+  --step--2: clamp(0.6875rem, 0.667rem + 0.093vw, 0.75rem); /* 11 → 12 */
+  --step--1: clamp(0.78rem, 0.75rem + 0.139vw, 0.875rem); /* 12.5 → 14 */
+  --step-0: clamp(1rem, 0.979rem + 0.093vw, 1.0625rem); /* 16 → 17 */
+  --step-1: clamp(1.125rem, 1.063rem + 0.278vw, 1.3125rem); /* 18 → 21 */
+  --step-2: clamp(1.3125rem, 1.188rem + 0.556vw, 1.6875rem); /* 21 → 27 */
+  --step-3: clamp(1.625rem, 1.375rem + 1.111vw, 2.375rem); /* 26 → 38 */
+  --step-4: clamp(2rem, 1.5rem + 2.222vw, 3.5rem); /* 32 → 56 */
+  --step-5: clamp(2.5rem, 1.583rem + 4.074vw, 5.25rem); /* 40 → 84 */
+  --step-6: clamp(3rem, 1.5rem + 6.667vw, 7.5rem); /* 48 → 120 */
+
+  --track-label: 0.08em; /* etiquetas en mayúsculas */
+  --track-display: -0.04em;
+  --lh-tight: 1.02;
+  --lh-heading: 1.15;
+  --lh-body: 1.6;
+
+  /* ---------- espacio (base 4 px) ---------- */
+  --space-3xs: 0.25rem; /* 4 */
+  --space-2xs: 0.5rem; /* 8 */
+  --space-xs: 0.75rem; /* 12 */
+  --space-s: 1rem; /* 16 */
+  --space-m: 1.5rem; /* 24 */
+  --space-l: 2rem; /* 32 */
+  --space-xl: 3rem; /* 48 */
+  --space-2xl: 4rem; /* 64 */
+  --space-3xl: 6rem; /* 96 */
+  --space-section: clamp(4rem, 2.67rem + 5.93vw, 8rem); /* 64 → 128 */
+
+  /* ---------- maquetación ---------- */
+  --w: 1200px; /* ancho de contenido */
+  --w-text: 64ch;
+  --gutter: clamp(16px, 4vw, 40px);
+  --header-h: 60px;
+  --cell: 24px; /* celda de la rejilla de puntos (CSS y canvas) */
+
+  /* ---------- forma ---------- */
+  --radius: 2px;
+  --cut: 10px; /* chaflán de los conectores */
+  --cut-s: 6px;
+  /* Nota: --chamfer* se resuelven con el --cut de :root. Para un chaflán distinto, escribe el polígono con var(--cut) en la regla. */
+  --chamfer: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+  --chamfer-s: polygon(var(--cut-s) 0, 100% 0, 100% calc(100% - var(--cut-s)), calc(100% - var(--cut-s)) 100%, 0 100%, 0 var(--cut-s));
+  --chamfer-tr: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, 0 100%);
+
+  /* ---------- movimiento ---------- */
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-snap: cubic-bezier(0.3, 1.4, 0.5, 1);
+  --dur-1: 120ms; /* hover, color */
+  --dur-2: 220ms; /* controles, menú */
+  --dur-3: 420ms; /* paneles */
+  --dur-4: 720ms; /* aparición al hacer scroll */
+
+  /* ---------- capas ---------- */
+  --z-bg: -1;
+  --z-raised: 1;
+  --z-header: 40;
+  --z-menu: 45;
+  --z-cursor: 90;
+  --z-skip: 100;
+
+  /* ---------- alias heredados (no usar en código nuevo; la fase 2 los retira) ---------- */
+  --accent: var(--volt-ink);
+  --accent-ink: var(--volt-ink);
+  --accent-soft: var(--volt-soft);
+  --grid: rgb(168 182 195 / 0.05);
+  --shadow: var(--shadow-1);
+}
+
+/* ---------- color · claro ---------- */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --bg: #eef2f5;
+    --bg-2: #e8edf1;
+    --surface: #ffffff;
+    --surface-2: #f4f7f9;
+    --surface-3: #e3e9ee;
+    --line: #d3dbe2;
+    --line-strong: #b3c0cb;
+    --ink: #0a1018;
+    --ink-2: #33414f;
+    --muted: #56636f;
+    --volt: #c8ff3d;
+    --volt-ink: #3e6a00;
+    --on-volt: #0a1018;
+    --volt-soft: rgb(62 106 0 / 0.1);
+    --ion: #0091b0;
+    --ion-ink: #00687f;
+    --ion-soft: rgb(0 145 176 / 0.1);
+    --flare: #c2183f;
+    --primary-bg: #0a1018;
+    --primary-fg: #c8ff3d;
+    --primary-bg-hover: #1b2633;
+    --ok: #17773c;
+    --warn: #8a5a00;
+    --err: #c2183f;
+    --focus: #00687f;
+    --fx-dot: #33414f24;
+    --fx-mark: #33414f3d;
+    --fx-hot: #4f8a00;
+    --fx-cool: #0091b0;
+    --shadow-1: 0 1px 0 rgb(255 255 255 / 0.8) inset, 0 12px 32px -20px rgb(10 16 24 / 0.28);
+    --shadow-2: 0 1px 0 rgb(255 255 255 / 0.8) inset, 0 24px 64px -28px rgb(10 16 24 / 0.35);
+    --header-bg: rgb(238 242 245 / 0.82);
+    --grid: rgb(10 16 24 / 0.05);
+    color-scheme: light;
+  }
+}
+:root[data-theme='light'] {
+  --bg: #eef2f5;
+  --bg-2: #e8edf1;
+  --surface: #ffffff;
+  --surface-2: #f4f7f9;
+  --surface-3: #e3e9ee;
+  --line: #d3dbe2;
+  --line-strong: #b3c0cb;
+  --ink: #0a1018;
+  --ink-2: #33414f;
+  --muted: #56636f;
+  --volt: #c8ff3d;
+  --volt-ink: #3e6a00;
+  --on-volt: #0a1018;
+  --volt-soft: rgb(62 106 0 / 0.1);
+  --ion: #0091b0;
+  --ion-ink: #00687f;
+  --ion-soft: rgb(0 145 176 / 0.1);
+  --flare: #c2183f;
+  --primary-bg: #0a1018;
+  --primary-fg: #c8ff3d;
+  --primary-bg-hover: #1b2633;
+  --ok: #17773c;
+  --warn: #8a5a00;
+  --err: #c2183f;
+  --focus: #00687f;
+  --fx-dot: #33414f24;
+  --fx-mark: #33414f3d;
+  --fx-hot: #4f8a00;
+  --fx-cool: #0091b0;
+  --shadow-1: 0 1px 0 rgb(255 255 255 / 0.8) inset, 0 12px 32px -20px rgb(10 16 24 / 0.28);
+  --shadow-2: 0 1px 0 rgb(255 255 255 / 0.8) inset, 0 24px 64px -28px rgb(10 16 24 / 0.35);
+  --header-bg: rgb(238 242 245 / 0.82);
+  --grid: rgb(10 16 24 / 0.05);
+  color-scheme: light;
+}

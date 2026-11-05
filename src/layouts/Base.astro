@@ -1,7 +1,11 @@
 ---
+// Documento base de las páginas por idioma. Archivo compartido de la fase 1 (congelado para la fase 2).
+// CSP: nada inline. El único <script> es el externo /theme-init.js (y bloques application/json de datos).
 import '../styles/global.css';
-import type { Lang } from '../i18n/content';
-import { dict } from '../i18n/content';
+// URL con hash de la fuente display, para precargarla (es el mismo archivo que usa fonts.css).
+import displayFont from '@fontsource-variable/martian-mono/files/martian-mono-latin-wdth-normal.woff2?url';
+import type { Lang } from '../i18n';
+import { dict } from '../i18n';
 
 interface Props {
   lang: Lang;
@@ -17,14 +21,15 @@ const ogImage = `${site}/og.png`;
 <html lang={t.htmlLang} data-lang={lang}>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{t.meta.title}</title>
     <meta name="description" content={t.meta.description} />
     <meta name="author" content={t.fullName} />
-    <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f3f1ec" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0e1013" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#eef2f5" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#070b11" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <link rel="preload" href={displayFont} as="font" type="font/woff2" crossorigin />
     <link rel="canonical" href={canonical} />
     <link rel="alternate" hreflang="es" href={`${site}/es/`} />
     <link rel="alternate" hreflang="en" href={`${site}/en/`} />
@@ -35,33 +40,21 @@ const ogImage = `${site}/og.png`;
     <meta property="og:description" content={t.meta.description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:locale" content={lang === 'es' ? 'es_SV' : 'en_US'} />
     <meta name="twitter:card" content="summary_large_image" />
     <!-- Tema antes de pintar, para evitar el destello. Archivo externo: la CSP no permite scripts inline. -->
     <script is:inline src="/theme-init.js"></script>
   </head>
-  <body>
+  <body id="top">
     <!-- Cloudflare no reescribe correos dentro de email_off: su decodificador usaría innerHTML y la CSP lo bloquea. -->
     <Fragment set:html="<!--email_off-->" />
     <a class="skip" href="#main">{t.ui.skip}</a>
+    <!-- Fondo: campo de señal (fx/background.ts) + viñeta. Decorativos. -->
+    <canvas class="fx-bg" data-fx-bg aria-hidden="true"></canvas>
+    <div class="fx-vignette" aria-hidden="true"></div>
     <slot />
     <Fragment set:html="<!--/email_off-->" />
   </body>
 </html>
-
-<style>
-  .skip {
-    position: absolute;
-    left: 12px;
-    top: -60px;
-    z-index: 100;
-    padding: 8px 12px;
-    background: var(--ink);
-    color: var(--bg);
-    border-radius: var(--radius);
-    font-size: 14px;
-  }
-  .skip:focus {
-    top: 12px;
-  }
-</style>

@@ -1,0 +1,450 @@
+/*
+ * Kit de componentes (CSS puro). Uso y ejemplos en DESIGN.md → "Component kit".
+ * Regla: los chaflanes (clip-path) van en ::before/::after para no recortar el anillo de foco.
+ * Congelado para la fase 2: solo variantes nuevas (aditivas).
+ */
+
+/* ---------- etiquetas mono ---------- */
+.label {
+  font-family: var(--font-display);
+  font-size: var(--step--2);
+  font-weight: 500;
+  font-stretch: 87.5%;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.label b,
+.label strong {
+  color: var(--volt-ink);
+  font-weight: 600;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  font-family: var(--font-display);
+  font-size: var(--step--1);
+  font-stretch: 87.5%;
+  color: var(--ink-2);
+}
+
+/* ---------- cabecera de sección (SectionHead.astro) ---------- */
+.section-head {
+  display: grid;
+  gap: var(--space-s);
+  margin-bottom: clamp(var(--space-l), 5vw, var(--space-2xl));
+}
+.section-index {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-family: var(--font-display);
+  font-size: var(--step--2);
+  font-weight: 500;
+  font-stretch: 87.5%;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.section-index b {
+  color: var(--volt-ink);
+  font-weight: 600;
+}
+/* Pista que sale del índice, como una traza de PCB que termina en un pad. */
+.section-index::after {
+  content: '';
+  flex: 1;
+  max-width: 220px;
+  height: 7px;
+  background:
+    radial-gradient(circle, var(--line-strong) 0 2.5px, transparent 3px) right center / 7px 7px no-repeat,
+    linear-gradient(var(--line-strong) 0 0) left center / calc(100% - 7px) 1px no-repeat;
+}
+.section-title {
+  font-size: var(--step-4);
+  font-weight: 500;
+  font-stretch: 87.5%;
+  letter-spacing: var(--track-display);
+  line-height: 1.05;
+  max-width: 22ch;
+}
+.section-lead {
+  max-width: var(--w-text);
+  color: var(--ink-2);
+  font-size: var(--step-1);
+  line-height: 1.5;
+}
+@media (min-width: 1024px) {
+  .section-head {
+    grid-template-columns: 220px minmax(0, 1fr);
+    column-gap: var(--space-xl);
+    align-items: start;
+  }
+  .section-index {
+    padding-top: 0.9em;
+  }
+  .section-head > div {
+    display: grid;
+    gap: var(--space-s);
+  }
+}
+
+/* ---------- botones ---------- */
+.btn {
+  --btn-bg: var(--primary-bg);
+  --btn-fg: var(--primary-fg);
+  --btn-line: transparent;
+  --mx: 0px;
+  --my: 0px;
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2xs);
+  min-height: 44px;
+  padding: 0 var(--space-m);
+  border: 0;
+  background: none;
+  color: var(--btn-fg);
+  font-family: var(--font-display);
+  font-size: var(--step--1);
+  font-weight: 600;
+  font-stretch: 87.5%;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  translate: var(--mx) var(--my);
+  transition:
+    translate var(--dur-2) var(--ease-out),
+    color var(--dur-1) var(--ease-out);
+}
+/* Capa de borde y capa de relleno, ambas achaflanadas. El polígono usa var(--cut) aquí (no el token --chamfer)
+   para que una variante pueda cambiar --cut localmente. */
+.btn::before,
+.btn::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+  transition: background-color var(--dur-1) var(--ease-out);
+}
+.btn::before {
+  inset: 0;
+  background: var(--btn-line);
+}
+.btn::after {
+  inset: 1px;
+  background: var(--btn-bg);
+}
+.btn:hover {
+  --btn-bg: var(--primary-bg-hover);
+}
+.btn:active {
+  translate: var(--mx) calc(var(--my) + 1px);
+}
+.btn .arrow,
+.btn__icon {
+  font-family: var(--font-mono);
+  transition: translate var(--dur-2) var(--ease-out);
+}
+.btn:hover .arrow,
+.btn:hover .btn__icon {
+  translate: 3px 0;
+}
+
+.btn--ghost,
+.btn-ghost {
+  --btn-bg: var(--surface);
+  --btn-fg: var(--ink);
+  --btn-line: var(--line-strong);
+}
+.btn--ghost:hover,
+.btn-ghost:hover {
+  --btn-bg: var(--surface-2);
+  --btn-line: var(--ion);
+}
+.btn--sm {
+  --cut: 7px;
+  min-height: 34px;
+  padding: 0 var(--space-s);
+  font-size: var(--step--2);
+}
+
+/* Botón cuadrado para íconos (tema, menú). */
+.icon-btn {
+  position: relative;
+  isolation: isolate;
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  transition: color var(--dur-1) var(--ease-out);
+}
+.icon-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--line);
+  clip-path: polygon(var(--cut-s) 0, 100% 0, 100% calc(100% - var(--cut-s)), calc(100% - var(--cut-s)) 100%, 0 100%, 0 var(--cut-s));
+  transition: background-color var(--dur-1) var(--ease-out);
+}
+.icon-btn::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  background: var(--bg);
+  clip-path: polygon(var(--cut-s) 0, 100% 0, 100% calc(100% - var(--cut-s)), calc(100% - var(--cut-s)) 100%, 0 100%, 0 var(--cut-s));
+}
+.icon-btn:hover {
+  color: var(--ink);
+}
+.icon-btn:hover::before {
+  background: var(--ion);
+}
+
+/* ---------- chips / tags ---------- */
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+}
+.chip,
+.tag {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  line-height: 1.4;
+  white-space: nowrap;
+  border-radius: var(--radius);
+}
+/* Pin de conector: un pequeño pad a la izquierda. */
+.chip::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  background: var(--line-strong);
+  flex: none;
+}
+.chip--volt {
+  border-color: color-mix(in srgb, var(--volt-ink) 40%, transparent);
+  color: var(--volt-ink);
+  background: var(--volt-soft);
+}
+.chip--volt::before {
+  background: var(--volt-ink);
+}
+.chip--ion {
+  border-color: color-mix(in srgb, var(--ion-ink) 40%, transparent);
+  color: var(--ion-ink);
+  background: var(--ion-soft);
+}
+.chip--ion::before {
+  background: var(--ion-ink);
+}
+.tag {
+  font-family: var(--font-display);
+  font-stretch: 87.5%;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+/* ---------- panel / ventana ---------- */
+.panel {
+  position: relative;
+  isolation: isolate;
+  color: var(--ink);
+}
+.panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: var(--line);
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, 0 100%);
+}
+.panel::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  background: var(--surface);
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, 0 100%);
+}
+.panel--raised::after {
+  background: var(--surface-2);
+}
+.panel__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-height: 38px;
+  padding: 0 var(--space-s);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-display);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.panel__title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.panel__body {
+  padding: var(--space-m);
+}
+
+/* Marcas de registro en las cuatro esquinas (sin marcado extra). */
+.reg {
+  --reg: var(--line-strong);
+  --reg-len: 10px;
+  background-image:
+    linear-gradient(var(--reg), var(--reg)), linear-gradient(var(--reg), var(--reg)),
+    linear-gradient(var(--reg), var(--reg)), linear-gradient(var(--reg), var(--reg)),
+    linear-gradient(var(--reg), var(--reg)), linear-gradient(var(--reg), var(--reg)),
+    linear-gradient(var(--reg), var(--reg)), linear-gradient(var(--reg), var(--reg));
+  background-repeat: no-repeat;
+  background-size:
+    var(--reg-len) 1px, 1px var(--reg-len), var(--reg-len) 1px, 1px var(--reg-len),
+    var(--reg-len) 1px, 1px var(--reg-len), var(--reg-len) 1px, 1px var(--reg-len);
+  background-position:
+    0 0, 0 0, 100% 0, 100% 0,
+    0 100%, 0 100%, 100% 100%, 100% 100%;
+}
+.reg--volt {
+  --reg: var(--volt-ink);
+}
+
+/* Cruz de registro suelta: <span class="xmark" aria-hidden="true"></span> */
+.xmark {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  background:
+    linear-gradient(var(--muted), var(--muted)) center / 100% 1px no-repeat,
+    linear-gradient(var(--muted), var(--muted)) center / 1px 100% no-repeat;
+}
+
+/* Fondo de puntos estático (para tarjetas; el de página es el canvas). */
+.dot-grid {
+  background-image: radial-gradient(var(--fx-dot) 1px, transparent 1.2px);
+  background-size: var(--cell) var(--cell);
+}
+
+/* Divisor con pad: <hr class="trace"> */
+.trace {
+  height: 7px;
+  margin: 0;
+  border: 0;
+  background:
+    radial-gradient(circle, var(--line-strong) 0 2.5px, transparent 3px) left center / 7px 7px no-repeat,
+    radial-gradient(circle, var(--line-strong) 0 2.5px, transparent 3px) right center / 7px 7px no-repeat,
+    linear-gradient(var(--line) 0 0) center / calc(100% - 14px) 1px no-repeat;
+}
+
+/* ---------- LED de estado ---------- */
+.led {
+  --led: var(--ok);
+  display: inline-block;
+  flex: none;
+  width: 7px;
+  height: 7px;
+  background: var(--led);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--led) 20%, transparent), 0 0 10px color-mix(in srgb, var(--led) 60%, transparent);
+}
+.led--volt {
+  --led: var(--volt-ink);
+}
+.led--ion {
+  --led: var(--ion);
+}
+.led--flare {
+  --led: var(--flare);
+}
+.led.is-off {
+  --led: var(--muted);
+  box-shadow: none;
+}
+.led.is-pulse {
+  animation: led-pulse 2.4s var(--ease-in-out) infinite;
+}
+@keyframes led-pulse {
+  50% {
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--led) 6%, transparent), 0 0 4px color-mix(in srgb, var(--led) 30%, transparent);
+  }
+}
+
+/* ---------- kbd ---------- */
+kbd,
+.kbd {
+  display: inline-block;
+  min-width: 1.7em;
+  padding: 0.05em 0.4em;
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 0.78em;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* ---------- enlaces ---------- */
+/* Subrayado que se "traza" de izquierda a derecha. */
+.link {
+  color: var(--ink);
+  text-decoration: none;
+  background: linear-gradient(currentColor, currentColor) left bottom / 0% 1px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) left bottom / 100% 1px no-repeat;
+  padding-bottom: 2px;
+  transition:
+    background-size var(--dur-3) var(--ease-out),
+    color var(--dur-1) var(--ease-out);
+}
+.link:hover {
+  background-size: 100% 1px, 100% 1px;
+}
+.link--ion {
+  color: var(--ion-ink);
+}
+.link--volt {
+  color: var(--volt-ink);
+}
+/* Flecha para enlaces externos: <span class="ext" aria-hidden="true">↗</span> */
+.ext {
+  display: inline-block;
+  font-family: var(--font-mono);
+  transition: translate var(--dur-2) var(--ease-out);
+}
+a:hover .ext {
+  translate: 2px -2px;
+}
+
+.arrow {
+  font-family: var(--font-mono);
+}

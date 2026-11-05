@@ -1,8 +1,10 @@
 ---
 import { Image } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
-import type { Lang } from '../i18n/content';
-import { dict } from '../i18n/content';
+import type { Lang } from '../i18n';
+import { dict } from '../i18n';
+import { sectionIndex } from '../lib/sections';
+import SectionHead from './ui/SectionHead.astro';
 
 interface Props {
   lang: Lang;
@@ -39,13 +41,7 @@ const tree = [
 
 <section class="section" id="projects">
   <div class="wrap">
-    <header class="section-head" data-reveal>
-      <p class="section-index"><b>03</b> / {p.label}</p>
-      <div>
-        <h2 class="section-title">{p.title}</h2>
-        <p class="section-lead">{p.lead}</p>
-      </div>
-    </header>
+    <SectionHead index={sectionIndex('projects')} label={p.label} title={p.title} lead={p.lead} />
 
     <div class="projects">
       {
@@ -366,7 +362,7 @@ const tree = [
   }
   @media (max-width: 860px) {
     .project {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr); /* minmax(0,…): el árbol con white-space: pre no debe ensanchar la página */
     }
     .project:nth-child(even) .p-copy {
       order: 0;

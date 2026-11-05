@@ -1,15 +1,17 @@
 ---
 import { Image } from 'astro:assets';
 import photo from '../assets/marlon.jpg';
-import type { Lang } from '../i18n/content';
-import { dict } from '../i18n/content';
+import type { Lang } from '../i18n';
+import { careerStart, dict } from '../i18n';
+import { yearsSince } from '../lib/time';
 
 interface Props {
   lang: Lang;
 }
 const { lang } = Astro.props;
 const t = dict[lang];
-const years = new Date().getFullYear() - 2022;
+// Años completos desde el inicio de carrera; el cliente los recalcula (data-since).
+const years = yearsSince(careerStart);
 ---
 
 <section class="hero" id="about">
@@ -20,12 +22,13 @@ const years = new Date().getFullYear() - 2022;
         <span data-hero-status>{t.hero.role}</span>
       </p>
       <h1 class="name">{t.name}</h1>
+      <p class="headline">{t.hero.headline}</p>
       <p class="title">{t.hero.title}</p>
       <p class="lead">{t.hero.lead}</p>
 
       <div class="cta">
-        <a class="btn" href="#contact">{t.hero.ctaPrimary} <span class="arrow" aria-hidden="true">→</span></a>
-        <a class="btn btn-ghost" href="#system">{t.hero.ctaSecondary}</a>
+        <a class="btn" href="#contact" data-magnetic>{t.hero.ctaPrimary} <span class="arrow" aria-hidden="true">→</span></a>
+        <a class="btn btn--ghost" href="#work" data-magnetic>{t.hero.ctaSecondary}</a>
       </div>
 
       <dl class="facts">
@@ -38,8 +41,8 @@ const years = new Date().getFullYear() - 2022;
           <dd>{t.location}</dd>
         </div>
         <div>
-          <dt class="mono">exp</dt>
-          <dd><span class="num">{years}+</span> {t.hero.years}</dd>
+          <dt class="mono">{t.hero.exp}</dt>
+          <dd><span class="num" data-since={careerStart}>{years}</span>+ {t.hero.years}</dd>
         </div>
       </dl>
     </div>
@@ -48,7 +51,7 @@ const years = new Date().getFullYear() - 2022;
       <div class="frame">
         <Image
           src={photo}
-          alt={t.fullName}
+          alt={t.hero.photoAlt}
           widths={[240, 360, 560]}
           sizes="(max-width: 760px) 70vw, 340px"
           quality={70}
@@ -72,18 +75,6 @@ const years = new Date().getFullYear() - 2022;
     padding: clamp(48px, 9vw, 112px) 0 clamp(56px, 9vw, 104px);
     overflow: hidden;
   }
-  /* Rejilla tenue tipo papel milimetrado, solo detrás del hero. */
-  .hero::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: linear-gradient(var(--grid) 1px, transparent 1px),
-      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-    background-size: 32px 32px;
-    mask-image: radial-gradient(ellipse 80% 70% at 70% 40%, #000 30%, transparent 75%);
-    -webkit-mask-image: radial-gradient(ellipse 80% 70% at 70% 40%, #000 30%, transparent 75%);
-    pointer-events: none;
-  }
   .hero-grid {
     position: relative;
     display: grid;
@@ -100,14 +91,24 @@ const years = new Date().getFullYear() - 2022;
     margin-bottom: 20px;
   }
   .name {
-    font-size: clamp(44px, 7.2vw, 84px);
-    letter-spacing: -0.035em;
+    font-size: var(--step-5);
+    font-weight: 600;
+    font-stretch: 75%;
+    letter-spacing: -0.05em;
     line-height: 0.98;
+  }
+  .headline {
+    margin-top: 18px;
+    max-width: 24ch;
+    font: 500 var(--step-2) / 1.25 var(--font-display);
+    font-stretch: 87.5%;
+    letter-spacing: -0.02em;
+    color: var(--ink);
   }
   .title {
     margin-top: 14px;
     font: 400 clamp(18px, 2.2vw, 22px) / 1.3 var(--font-mono);
-    color: var(--accent-ink);
+    color: var(--volt-ink);
     letter-spacing: -0.01em;
   }
   .lead {
@@ -167,7 +168,7 @@ const years = new Date().getFullYear() - 2022;
     position: absolute;
     width: 9px;
     height: 9px;
-    border-color: var(--accent);
+    border-color: var(--volt-ink);
     border-style: solid;
     border-width: 0;
   }

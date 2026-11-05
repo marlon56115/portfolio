@@ -1,0 +1,23 @@
+---
+// Cabecera de sección del kit: índice "01 / etiqueta" con traza, título y entradilla.
+// Estilos en src/styles/components.css (.section-head, .section-index, .section-title, .section-lead).
+// Uso: <SectionHead index="01" label={w.label} title={w.title} lead={w.lead} />
+// Slot opcional para contenido extra bajo la entradilla.
+interface Props {
+  index: string;
+  label: string;
+  title: string;
+  lead?: string;
+  id?: string; // id del <h2> (para aria-labelledby de la sección)
+}
+const { index, label, title, lead, id } = Astro.props;
+---
+
+<header class="section-head" data-reveal>
+  <p class="section-index"><b>{index}</b> / {label}</p>
+  <div>
+    <h2 class="section-title" id={id}>{title}</h2>
+    {lead && <p class="section-lead">{lead}</p>}
+    <slot />
+  </div>
+</header>

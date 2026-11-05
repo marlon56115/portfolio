@@ -1,6 +1,9 @@
 ---
+// Página principal (una por idioma). Archivo compartido de la fase 1 (congelado para la fase 2).
+// El orden de las secciones sigue src/lib/sections.ts (nav e índices "01 / …" salen de ahí).
 import Base from '../layouts/Base.astro';
 import Header from './Header.astro';
+import Footer from './Footer.astro';
 import Hero from './Hero.astro';
 import System from './System.astro';
 import Work from './Work.astro';
@@ -8,27 +11,27 @@ import Projects from './Projects.astro';
 import Skills from './Skills.astro';
 import Contact from './Contact.astro';
 import Terminal from './Terminal.astro';
-import type { Lang } from '../i18n/content';
+import type { Lang } from '../i18n';
 
 interface Props {
   lang: Lang;
 }
 const { lang } = Astro.props;
-// Los pone el Dockerfile al construir; en local se ven como "dev".
+// La pone el Dockerfile al construir; en local se ve "dev".
 const version = process.env.BUILD_VERSION || 'dev';
-const commit = process.env.BUILD_COMMIT || '0000000';
 ---
 
 <Base lang={lang}>
   <Header lang={lang} />
   <main id="main">
     <Hero lang={lang} />
-    <System lang={lang} />
     <Work lang={lang} />
     <Projects lang={lang} />
     <Skills lang={lang} />
-    <Contact lang={lang} version={version} commit={commit} />
+    <System lang={lang} />
+    <Contact lang={lang} />
   </main>
+  <Footer lang={lang} version={version} />
   <Terminal lang={lang} />
 </Base>
 

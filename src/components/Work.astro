@@ -1,6 +1,9 @@
 ---
-import type { Lang } from '../i18n/content';
-import { dict } from '../i18n/content';
+import type { Lang } from '../i18n';
+import { dict } from '../i18n';
+import { formatRange, jobDuration } from '../lib/time';
+import { sectionIndex } from '../lib/sections';
+import SectionHead from './ui/SectionHead.astro';
 
 interface Props {
   lang: Lang;
@@ -9,25 +12,12 @@ const { lang } = Astro.props;
 const t = dict[lang];
 const w = t.work;
 
-const months: Record<Lang, string[]> = {
-  es: ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'],
-  en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-};
-const fmt = (ym: string) => {
-  const [y, m] = ym.split('-').map(Number);
-  return `${months[lang][(m ?? 1) - 1]} ${y}`;
-};
+const range = (from: string, to: string | null) => formatRange(from, to, lang, w.present);
 ---
 
 <section class="section" id="work">
   <div class="wrap">
-    <header class="section-head" data-reveal>
-      <p class="section-index"><b>02</b> / {w.label}</p>
-      <div>
-        <h2 class="section-title">{w.title}</h2>
-        <p class="section-lead">{w.lead}</p>
-      </div>
-    </header>
+    <SectionHead index={sectionIndex('work')} label={w.label} title={w.title} lead={w.lead} />
 
     <div class="log">
       <p class="cmd mono" aria-hidden="true"><span>$</span> git log --graph --oneline career</p>
@@ -53,8 +43,15 @@ const fmt = (ym: string) => {
                         )}
                       </span>
                     )}
-                    <span class="date">
-                      {fmt(j.from)} — {j.to ? fmt(j.to) : w.present}
+                    <span class="date">{range(j.from, j.to)}</span>
+                    <span class="dur" title={w.duration}>
+                      {j.to ? (
+                        jobDuration(j.from, j.to, lang)
+                      ) : (
+                        <span data-since={j.from} data-since-format="duration">
+                          {jobDuration(j.from, null, lang)}
+                        </span>
+                      )}
                     </span>
                   </span>
                   <span class="line2">
@@ -180,6 +177,14 @@ const fmt = (ym: string) => {
     color: var(--accent-ink);
   }
   .date {
+    color: var(--muted);
+  }
+  /* Duración calculada desde from/to; la del puesto actual la recalcula el cliente (data-since). */
+  .dur {
+    color: var(--ion-ink);
+  }
+  .dur::before {
+    content: '· ';
     color: var(--muted);
   }
   .line2 {

@@ -11,18 +11,26 @@ import '../styles/global.css';
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Marlon Guerra</title>
     <link rel="canonical" href="https://marlon.mihomeserver.com/en/" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script is:inline src="/theme-init.js"></script>
   </head>
   <body>
     <main class="wrap pick">
-      <p class="mono">marlon@homelab:~$ ls</p>
-      <p><a href="/es/">es/</a> &nbsp; <a href="/en/">en/</a></p>
+      <p class="label">visitor@portfolio:~$ ls</p>
+      <p class="langs"><a class="link" href="/es/">es/</a> <a class="link" href="/en/">en/</a></p>
     </main>
   </body>
 </html>
 
 <style>
   .pick {
+    display: grid;
+    gap: var(--space-s);
     padding-top: 30vh;
-    font-family: var(--font-mono);
+  }
+  .langs {
+    display: flex;
+    gap: var(--space-l);
+    font: 500 var(--step-3) / 1 var(--font-display);
   }
 </style>

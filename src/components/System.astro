@@ -1,6 +1,8 @@
 ---
-import type { Lang } from '../i18n/content';
-import { dict } from '../i18n/content';
+import type { Lang } from '../i18n';
+import { dict } from '../i18n';
+import { sectionIndex } from '../lib/sections';
+import SectionHead from './ui/SectionHead.astro';
 
 interface Props {
   lang: Lang;
@@ -38,13 +40,7 @@ const delivery: Node[] = [
 
 <section class="section" id="system">
   <div class="wrap">
-    <header class="section-head" data-reveal>
-      <p class="section-index"><b>01</b> / {s.label}</p>
-      <div>
-        <h2 class="section-title">{s.title}</h2>
-        <p class="section-lead">{s.lead}</p>
-      </div>
-    </header>
+    <SectionHead index={sectionIndex('system')} label={s.label} title={s.title} lead={s.lead} />
 
     <div class="panel" data-status-panel data-reveal aria-live="polite">
       <div class="panel-bar mono">

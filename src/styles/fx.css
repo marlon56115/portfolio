@@ -1,0 +1,155 @@
+/*
+ * Efectos: fondo animado, seguidor del cursor, barra de progreso, scramble y aparición al hacer scroll.
+ * Los controla src/scripts/fx/* y src/scripts/core/reveal.ts. Reglas de movimiento en DESIGN.md.
+ */
+
+/* ---------- fondo: campo de señal (fx/background.ts) ---------- */
+.fx-bg {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-bg);
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+/* Viñeta suave para que el contenido no compita con los puntos de los bordes. */
+.fx-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-bg);
+  pointer-events: none;
+  background: radial-gradient(ellipse 120% 90% at 50% 0%, transparent 55%, var(--bg) 100%);
+}
+
+/* ---------- seguidor del cursor (fx/cursor.ts; solo puntero fino) ---------- */
+.fx-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: var(--z-cursor);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-2) var(--ease-out);
+}
+.fx-cursor.is-on {
+  opacity: 1;
+}
+.fx-cursor.is-hidden {
+  opacity: 0;
+}
+.fx-cursor__corner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  border: 0 solid var(--ion);
+  will-change: transform;
+}
+.fx-cursor__corner[data-c='tl'] {
+  border-top-width: 1.5px;
+  border-left-width: 1.5px;
+}
+.fx-cursor__corner[data-c='tr'] {
+  border-top-width: 1.5px;
+  border-right-width: 1.5px;
+}
+.fx-cursor__corner[data-c='bl'] {
+  border-bottom-width: 1.5px;
+  border-left-width: 1.5px;
+}
+.fx-cursor__corner[data-c='br'] {
+  border-bottom-width: 1.5px;
+  border-right-width: 1.5px;
+}
+.fx-cursor.is-target .fx-cursor__corner {
+  border-color: var(--volt-ink);
+}
+.fx-cursor__readout {
+  position: fixed;
+  top: 0;
+  left: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  white-space: nowrap;
+  will-change: transform;
+  transition: opacity var(--dur-2) var(--ease-out);
+}
+.fx-cursor.is-target .fx-cursor__readout {
+  opacity: 0;
+}
+
+/* ---------- progreso de lectura (core/nav.ts) ---------- */
+.fx-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  pointer-events: none;
+}
+.fx-progress__bar {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--ion), var(--volt));
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+}
+/* Cabeza de la traza: un punto que avanza con el progreso. */
+.fx-progress__head {
+  position: absolute;
+  top: -2px;
+  left: 0;
+  width: 5px;
+  height: 5px;
+  background: var(--volt);
+  box-shadow: 0 0 8px var(--volt);
+  translate: -2.5px 0;
+  opacity: 0;
+  transition: opacity var(--dur-2) var(--ease-out);
+}
+.fx-progress.is-active .fx-progress__head {
+  opacity: 1;
+}
+
+/* ---------- scramble (fx/scramble.ts) ---------- */
+/* El texto visible se reemplaza por una copia aria-hidden; el accesible queda en .visually-hidden. */
+[data-scramble] {
+  font-variant-numeric: tabular-nums;
+}
+.scramble__glyph {
+  color: var(--ion-ink);
+}
+
+/* ---------- aparición al hacer scroll (core/reveal.ts) ---------- */
+/* Solo con JS: sin JS (o sin IntersectionObserver) todo es visible. */
+.js [data-reveal] {
+  opacity: 0;
+  translate: 0 14px;
+  transition:
+    opacity var(--dur-4) var(--ease-out),
+    translate var(--dur-4) var(--ease-out);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.js [data-reveal='fade'] {
+  translate: none;
+}
+.js [data-reveal].is-in {
+  opacity: 1;
+  translate: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js [data-reveal] {
+    opacity: 1;
+    translate: none;
+    transition: none;
+  }
+  .fx-cursor {
+    display: none;
+  }
+}

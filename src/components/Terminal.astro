@@ -1,6 +1,6 @@
 ---
-import type { Lang } from '../i18n/content';
-import { dict } from '../i18n/content';
+import type { Lang } from '../i18n';
+import { dict } from '../i18n';
 
 interface Props {
   lang: Lang;
@@ -33,12 +33,12 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c');
   <div class="term-win">
     <div class="term-bar mono">
       <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
-      <span class="term-title">visitor@marlon.mihomeserver.com: ~</span>
+      <span class="term-title">{t.terminal.prompt.user}@{t.terminal.prompt.host}: {t.terminal.prompt.path}</span>
       <button class="term-x" type="button" data-terminal-close aria-label={t.ui.close}>esc</button>
     </div>
     <div class="term-out mono" data-terminal-out role="log" aria-live="polite"></div>
     <form class="term-line mono" data-terminal-form autocomplete="off">
-      <label class="prompt" for="term-in"><span class="u">visitor</span>@<span class="h">homelab</span>:<span class="p">~</span>$</label>
+      <label class="prompt" for="term-in"><span class="u">{t.terminal.prompt.user}</span>@<span class="h">{t.terminal.prompt.host}</span>:<span class="p">{t.terminal.prompt.path}</span>$</label>
       <input
         id="term-in"
         class="term-in"
@@ -144,13 +144,13 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c');
     color: #8c919b;
   }
   .u {
-    color: #4ac26b;
+    color: #5be38a;
   }
   .h {
-    color: #f08a4b;
+    color: #c8ff3d;
   }
   .p {
-    color: #7aa2f7;
+    color: #38e1ff;
   }
   .term-in {
     flex: 1;
@@ -161,7 +161,7 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c');
     background: transparent;
     color: #e8e6e1;
     font: inherit;
-    caret-color: #f08a4b;
+    caret-color: #c8ff3d;
   }
   .term-out :global(.c-cmd) {
     color: #e8e6e1;
@@ -170,22 +170,22 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c');
     color: #6c717b;
   }
   .term-out :global(.c-acc) {
-    color: #f08a4b;
+    color: #c8ff3d;
   }
   .term-out :global(.c-ok) {
-    color: #4ac26b;
+    color: #5be38a;
   }
   .term-out :global(.c-warn) {
-    color: #d6a33a;
+    color: #ffc93d;
   }
   .term-out :global(.c-err) {
-    color: #f7768e;
+    color: #ff5c7a;
   }
   .term-out :global(.c-blue) {
-    color: #7aa2f7;
+    color: #38e1ff;
   }
   .term-out :global(a) {
-    color: #7aa2f7;
+    color: #38e1ff;
   }
   @media (max-width: 520px) {
     .prompt .h,

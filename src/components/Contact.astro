@@ -1,33 +1,27 @@
 ---
-import type { Lang } from '../i18n/content';
-import { dict } from '../i18n/content';
+import type { Lang } from '../i18n';
+import { dict } from '../i18n';
+import { sectionIndex } from '../lib/sections';
+import SectionHead from './ui/SectionHead.astro';
 
 interface Props {
   lang: Lang;
-  version: string;
-  commit: string;
 }
-const { lang, version, commit } = Astro.props;
+const { lang } = Astro.props;
 const t = dict[lang];
 const c = t.contact;
 ---
 
 <section class="section contact" id="contact">
   <div class="wrap">
-    <header class="section-head" data-reveal>
-      <p class="section-index"><b>05</b> / {c.label}</p>
-      <div>
-        <h2 class="section-title big">{c.title}</h2>
-        <p class="section-lead">{c.lead}</p>
-      </div>
-    </header>
+    <SectionHead index={sectionIndex('contact')} label={c.label} title={c.title} lead={c.lead} />
 
     <div class="links" data-reveal>
       <div class="link-row">
         <span class="lk mono">{c.email}</span>
         <a class="lv" href={`mailto:${t.email}`}>{t.email}</a>
         <button class="copy mono" type="button" data-copy={t.email} data-copied={t.ui.copied} aria-label={t.ui.copyEmail} data-js-only>
-          copy
+          {c.copy}
         </button>
       </div>
       <div class="link-row">
@@ -43,17 +37,7 @@ const c = t.contact;
   </div>
 </section>
 
-<footer class="ftr">
-  <div class="wrap ftr-in mono">
-    <p>© {new Date().getFullYear()} {t.fullName}</p>
-    <p class="ftr-mid">{t.footer.built}</p>
-    <p class="ftr-build">
-      <span class="led is-pulse" data-footer-led></span>
-      v{version} · <a href={`https://github.com/marlon56115/portfolio/commit/${commit}`} rel="noopener noreferrer" target="_blank">{commit.slice(0, 7)}</a>
-      · <a href="https://github.com/marlon56115/portfolio" rel="noopener noreferrer" target="_blank">{t.footer.source}</a>
-    </p>
-  </div>
-</footer>
+
 
 <style>
   .big {
@@ -85,7 +69,7 @@ const c = t.contact;
     overflow-wrap: anywhere;
   }
   .lv:hover {
-    color: var(--accent-ink);
+    color: var(--volt-ink);
   }
   .copy {
     height: 30px;
@@ -99,33 +83,12 @@ const c = t.contact;
   }
   .copy:hover {
     color: var(--ink);
-    border-color: var(--accent);
+    border-color: var(--ion);
   }
   .refs {
     margin-top: 18px;
     font-size: 14px;
     color: var(--muted);
-  }
-  .ftr {
-    border-top: 1px solid var(--line);
-    padding: 28px 0 36px;
-  }
-  .ftr-in {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 10px 24px;
-    font-size: 12px;
-    color: var(--muted);
-  }
-  .ftr-build {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-  .ftr a {
-    color: var(--ink-2);
   }
   @media (max-width: 620px) {
     .link-row {

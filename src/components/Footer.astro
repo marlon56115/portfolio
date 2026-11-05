@@ -1,0 +1,74 @@
+---
+// Pie del sitio. Por pedido del usuario: sin enlace al repositorio ni al commit; la versión va como texto.
+// Archivo compartido de la fase 1 (congelado para la fase 2).
+import type { Lang } from '../i18n';
+import { dict } from '../i18n';
+
+interface Props {
+  lang: Lang;
+  version: string;
+}
+const { lang, version } = Astro.props;
+const t = dict[lang];
+const year = new Date().getFullYear();
+---
+
+<footer class="ftr">
+  <div class="wrap ftr-in">
+    <p class="ftr-name">
+      © <span data-year>{year}</span>
+      {t.fullName}
+    </p>
+    <p class="ftr-line">{t.footer.line}</p>
+    <p class="ftr-meta label">
+      <span>{t.footer.version} {version}</span>
+      <a class="ftr-top" href="#top">{t.ui.backToTop} <span aria-hidden="true">↑</span></a>
+    </p>
+  </div>
+</footer>
+
+<style>
+  .ftr {
+    position: relative;
+    padding: var(--space-xl) 0 calc(var(--space-xl) + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line);
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+  }
+  .ftr-in {
+    display: grid;
+    gap: var(--space-s);
+    font-size: var(--step--1);
+    color: var(--muted);
+  }
+  .ftr-name {
+    font-family: var(--font-display);
+    font-stretch: 87.5%;
+    color: var(--ink-2);
+  }
+  .ftr-line {
+    max-width: 52ch;
+  }
+  .ftr-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-xs) var(--space-m);
+  }
+  .ftr-top {
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .ftr-top:hover {
+    color: var(--volt-ink);
+  }
+  @media (min-width: 768px) {
+    .ftr-in {
+      grid-template-columns: auto 1fr auto;
+      align-items: baseline;
+      gap: var(--space-m) var(--space-xl);
+    }
+    .ftr-meta {
+      gap: var(--space-l);
+    }
+  }
+</style>

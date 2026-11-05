@@ -1,6 +1,7 @@
 // Terminal del sitio. Toda la salida se construye con nodos y textContent:
 // nada de lo que escribe el visitante se interpreta como HTML.
 import { fetchStatus, fmtBytes, fmtRate, fmtUptime, pct } from './status';
+import { terminal } from '../i18n/terminal';
 
 type Seg = string | { t: string; c?: string; href?: string };
 type Line = Seg[];
@@ -30,66 +31,10 @@ interface Ctx {
   rememberLang: (l: Lang) => void;
 }
 
-const S = {
-  es: {
-    help: [
-      ['whoami', 'quién soy'],
-      ['about', 'resumen'],
-      ['experience', 'historial laboral'],
-      ['projects', 'proyectos'],
-      ['skills', 'stack técnico'],
-      ['education', 'formación'],
-      ['contact', 'cómo contactarme'],
-      ['status', 'métricas en vivo del servidor'],
-      ['neofetch', 'info del sistema'],
-      ['kubectl get pods', 'pods del clúster (resumen)'],
-      ['theme light|dark', 'cambiar el tema'],
-      ['lang es|en', 'cambiar el idioma'],
-      ['goto <sección>', 'ir a una sección'],
-      ['ls · cat · pwd · date · echo · history · clear · exit', ''],
-    ],
-    tab: 'Tab autocompleta · ↑↓ historial',
-    fetching: 'consultando Prometheus…',
-    down: 'Prometheus no responde ahora mismo.',
-    sudo: 'visitor no está en el archivo sudoers. Este incidente será reportado.',
-    rm: 'Buen intento. El sistema de archivos es de solo lectura (readOnlyRootFilesystem: true).',
-    noFile: 'No existe el archivo',
-    themeSet: 'tema:',
-    langSwitch: 'cambiando idioma…',
-    gotoNo: 'secciones:',
-    hire: 'Excelente decisión. Escríbeme a',
-  },
-  en: {
-    help: [
-      ['whoami', 'who I am'],
-      ['about', 'summary'],
-      ['experience', 'work history'],
-      ['projects', 'projects'],
-      ['skills', 'tech stack'],
-      ['education', 'education'],
-      ['contact', 'how to reach me'],
-      ['status', 'live server metrics'],
-      ['neofetch', 'system info'],
-      ['kubectl get pods', 'cluster pods (summary)'],
-      ['theme light|dark', 'switch theme'],
-      ['lang es|en', 'switch language'],
-      ['goto <section>', 'jump to a section'],
-      ['ls · cat · pwd · date · echo · history · clear · exit', ''],
-    ],
-    tab: 'Tab completes · ↑↓ history',
-    fetching: 'querying Prometheus…',
-    down: 'Prometheus is not answering right now.',
-    sudo: 'visitor is not in the sudoers file. This incident will be reported.',
-    rm: 'Nice try. The filesystem is read-only (readOnlyRootFilesystem: true).',
-    noFile: 'No such file',
-    themeSet: 'theme:',
-    langSwitch: 'switching language…',
-    gotoNo: 'sections:',
-    hire: 'Great call. Write to',
-  },
-};
+// Textos de la interfaz: src/i18n/terminal.ts (privacidad revisada en la fase 1).
+const S = { es: terminal.es.terminal, en: terminal.en.terminal };
 
-const SECTIONS = ['about', 'system', 'work', 'projects', 'skills', 'contact'];
+const SECTIONS = ['about', 'work', 'projects', 'skills', 'system', 'contact'];
 const FILES = ['README.md', 'experience.log', 'projects.md', 'skills.yaml', 'contact.txt'];
 
 export function initTerminal(ctx: Ctx) {
@@ -146,7 +91,7 @@ export function initTerminal(ctx: Ctx) {
   const cmds: Record<string, (args: string[]) => void | Promise<void>> = {
     help: () => {
       print([dim(s.tab)], []);
-      s.help.forEach(([c, d]) => print([acc(pad(c ?? '', 22)), d ? dim(d ?? '') : '']));
+      s.commands.forEach(([c, d]) => print([acc(pad(c ?? '', 22)), d ? dim(d ?? '') : '']));
     },
     whoami: () => print([ok(data.fullName)], [data.role, dim(' · '), data.location]),
     about: () => print([data.lead]),
@@ -154,7 +99,7 @@ export function initTerminal(ctx: Ctx) {
       data.jobs.forEach((j, i) =>
         print(
           [{ t: '* ', c: i === 0 ? 'c-acc' : 'c-dim' }, { t: j.id, c: 'c-warn' }, ' ', { t: j.company, c: 'c-cmd' }, dim(` — ${j.role}`)],
-          [dim('|  '), dim(`${j.from} → ${j.to ?? (ctx.lang === 'es' ? 'hoy' : 'now')}  `), j.summary],
+          [dim('|  '), dim(`${j.from} → ${j.to ?? s.present}  `), j.summary],
         ),
       );
     },
@@ -259,7 +204,7 @@ export function initTerminal(ctx: Ctx) {
 
   async function run(line: string) {
     const trimmed = line.trim();
-    print([{ t: 'visitor@homelab', c: 'c-ok' }, dim(':~$ '), { t: trimmed, c: 'c-cmd' }]);
+    print([{ t: `${s.prompt.user}@${s.prompt.host}`, c: 'c-ok' }, dim(`:${s.prompt.path}$ `), { t: trimmed, c: 'c-cmd' }]);
     if (!trimmed) return;
     history.push(trimmed);
     if (history.length > 50) history.shift();

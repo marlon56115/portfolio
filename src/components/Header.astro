@@ -1,44 +1,50 @@
 ---
-import type { Lang } from '../i18n/content';
-import { dict } from '../i18n/content';
+// Cabecera fija. ≥ 1024 px: navegación en línea. < 1024 px: botón de menú que abre un panel
+// a pantalla completa (core/menu.ts). Sin JS, en móvil la navegación queda como fila desplazable.
+// Archivo compartido de la fase 1 (congelado para la fase 2).
+import type { Lang } from '../i18n';
+import { dict } from '../i18n';
+import { sections, sectionIndex } from '../lib/sections';
 
 interface Props {
   lang: Lang;
 }
 const { lang } = Astro.props;
 const t = dict[lang];
-const links = [
-  ['system', t.nav.system],
-  ['work', t.nav.work],
-  ['projects', t.nav.projects],
-  ['skills', t.nav.skills],
-  ['contact', t.nav.contact],
-] as const;
 ---
 
 <header class="hdr" data-header>
   <div class="wrap hdr-in">
-    <a class="brand" href={`/${lang}/`} aria-label={t.name}>
-      <span class="brand-mark" aria-hidden="true">mg</span>
-      <span class="brand-path mono"><span class="brand-host">marlon</span><span class="muted">@homelab:~</span></span>
+    <a class="brand" href={`/${lang}/#top`} aria-label={`${t.name} — ${t.nav.about}`}>
+      <span class="brand-mark" aria-hidden="true">{t.initials}</span>
+      <span class="brand-name" aria-hidden="true">marlon<span class="brand-dot">.</span>guerra<span class="brand-caret"></span></span>
     </a>
 
-    <nav class="nav" aria-label="primary">
-      <ul>
+    <nav class="nav" id="site-nav" aria-label={t.ui.primaryNav} data-menu-panel>
+      <ul class="nav-list">
         {
-          links.map(([id, label]) => (
+          sections.map((s) => (
             <li>
-              <a href={`#${id}`} data-nav={id}>
-                {label}
+              <a href={`#${s.id}`} data-nav={s.id}>
+                <span class="nav-idx" aria-hidden="true">
+                  {sectionIndex(s.id)}
+                </span>
+                <span class="nav-label" data-scramble>
+                  {t.nav[s.key]}
+                </span>
               </a>
             </li>
           ))
         }
       </ul>
+      <p class="nav-foot" data-js-only>
+        <a class="link" href={`mailto:${t.email}`}>{t.email}</a>
+        <span class="label">{t.location}</span>
+      </p>
     </nav>
 
     <div class="tools">
-      <div class="lang mono" role="group" aria-label={t.ui.language}>
+      <div class="lang" role="group" aria-label={t.ui.language}>
         <a href="/es/" hreflang="es" lang="es" data-set-lang="es" aria-current={lang === 'es' ? 'true' : undefined}>es</a>
         <span aria-hidden="true">/</span>
         <a href="/en/" hreflang="en" lang="en" data-set-lang="en" aria-current={lang === 'en' ? 'true' : undefined}>en</a>
@@ -46,16 +52,30 @@ const links = [
       <button class="icon-btn" type="button" data-theme-toggle aria-label={t.ui.theme} title={t.ui.theme} data-js-only>
         <svg class="i-sun" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
           <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"></circle>
-          <path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+          <path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="square"></path>
         </svg>
         <svg class="i-moon" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
           <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path>
         </svg>
       </button>
-      <button class="term-btn mono" type="button" data-terminal-open aria-label={t.ui.openTerminal} data-js-only>
-        <span aria-hidden="true">&gt;_</span><kbd aria-hidden="true">`</kbd>
+      <button
+        class="icon-btn menu-btn"
+        type="button"
+        data-menu-toggle
+        aria-controls="site-nav"
+        aria-expanded="false"
+        aria-label={t.ui.menuOpen}
+        data-label-open={t.ui.menuOpen}
+        data-label-close={t.ui.menuClose}
+        data-js-only
+      >
+        <span class="menu-icon" aria-hidden="true"><i></i><i></i></span>
       </button>
     </div>
+  </div>
+  <div class="fx-progress" data-progress aria-hidden="true">
+    <span class="fx-progress__bar" data-progress-bar></span>
+    <span class="fx-progress__head" data-progress-head></span>
   </div>
 </header>
 
@@ -63,116 +83,155 @@ const links = [
   .hdr {
     position: sticky;
     top: 0;
-    z-index: 40;
-    background: color-mix(in srgb, var(--bg) 86%, transparent);
-    backdrop-filter: saturate(1.4) blur(10px);
-    -webkit-backdrop-filter: saturate(1.4) blur(10px);
+    z-index: var(--z-header);
     border-bottom: 1px solid transparent;
-    transition: border-color 0.2s;
+    transition: border-color var(--dur-2) var(--ease-out);
   }
-  .hdr.is-scrolled {
+  /* El desenfoque va en un pseudo: backdrop-filter en .hdr haría que el panel fijo del menú se midiera contra la cabecera. */
+  .hdr::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--header-bg);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    opacity: 0;
+    transition: opacity var(--dur-2) var(--ease-out);
+  }
+  .hdr:global(.is-scrolled),
+  .hdr:global(.is-menu-open) {
     border-bottom-color: var(--line);
+  }
+  .hdr:global(.is-scrolled)::before,
+  .hdr:global(.is-menu-open)::before {
+    opacity: 1;
   }
   .hdr-in {
     display: flex;
     align-items: center;
-    gap: 24px;
-    height: 60px;
+    gap: var(--space-m);
+    height: var(--header-h);
   }
+
+  /* ---------- marca ---------- */
   .brand {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 10px;
-    text-decoration: none;
     min-width: 0;
+    text-decoration: none;
+    color: var(--ink);
   }
   .brand-mark {
     display: grid;
     place-items: center;
-    width: 28px;
-    height: 28px;
-    border-radius: var(--radius);
-    background: var(--ink);
-    color: var(--bg);
-    font: 600 13px/1 var(--font-mono);
-    letter-spacing: -0.04em;
+    width: 30px;
+    height: 30px;
+    background: var(--primary-bg);
+    color: var(--primary-fg);
+    clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+    font: 700 12px/1 var(--font-display);
+    font-stretch: 75%;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
   }
-  .brand-path {
-    font-size: 13px;
+  .brand-name {
+    font: 500 13px/1 var(--font-display);
+    font-stretch: 87.5%;
+    letter-spacing: -0.01em;
     white-space: nowrap;
   }
-  .brand-host {
-    color: var(--ink);
+  .brand-dot {
+    color: var(--volt-ink);
   }
-  .muted {
-    color: var(--muted);
+  .brand-caret {
+    display: inline-block;
+    width: 0.55em;
+    height: 2px;
+    margin-left: 2px;
+    background: var(--volt-ink);
+    vertical-align: baseline;
+    animation: caret 1.1s steps(1) infinite;
   }
-  .nav {
-    margin-left: auto;
+  @keyframes caret {
+    50% {
+      opacity: 0;
+    }
   }
-  .nav ul {
+
+  /* ---------- navegación ---------- */
+  .nav-list {
     display: flex;
-    gap: 4px;
+    gap: 2px;
     list-style: none;
   }
-  .nav a {
-    display: block;
-    padding: 6px 10px;
-    font: 400 13px/1 var(--font-mono);
-    color: var(--muted);
+  .nav-list a {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 8px 10px;
+    font: 500 var(--step--1) / 1 var(--font-display);
+    font-stretch: 87.5%;
+    color: var(--ink-2);
     text-decoration: none;
-    border-radius: var(--radius);
+    white-space: nowrap;
   }
-  .nav a:hover,
-  .nav a.is-active {
+  .nav-idx {
+    font-size: 0.78em;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    transition: color var(--dur-1) var(--ease-out);
+  }
+  .nav-list a:hover {
     color: var(--ink);
   }
-  .nav a.is-active::before {
-    content: '#';
-    color: var(--accent);
+  .nav-list a:hover .nav-idx,
+  .nav-list a:global(.is-active) .nav-idx {
+    color: var(--volt-ink);
   }
+  .nav-list a:global(.is-active) {
+    color: var(--ink);
+  }
+  .nav-list a:global(.is-active) .nav-label {
+    text-decoration: underline;
+    text-decoration-color: var(--volt-ink);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 6px;
+  }
+  .nav-foot {
+    display: none;
+  }
+
+  /* ---------- herramientas ---------- */
   .tools {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    margin-left: auto;
   }
   .lang {
     display: flex;
-    gap: 4px;
-    font-size: 13px;
+    align-items: center;
+    gap: 2px;
+    padding-inline: 4px;
+    font: 500 var(--step--1) / 1 var(--font-display);
+    font-stretch: 87.5%;
     color: var(--muted);
-    padding: 0 6px;
   }
   .lang a {
-    text-decoration: none;
+    display: inline-grid;
+    place-items: center;
+    min-width: 28px;
+    min-height: 40px;
     color: var(--muted);
+    text-decoration: none;
+  }
+  .lang a:hover {
+    color: var(--ink);
   }
   .lang a[aria-current='true'] {
-    color: var(--ink);
-    text-decoration: underline;
-    text-decoration-color: var(--accent);
-  }
-  .icon-btn,
-  .term-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    height: 32px;
-    padding: 0 8px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: var(--surface);
-    color: var(--ink-2);
-    cursor: pointer;
-    transition: border-color 0.15s, color 0.15s;
-  }
-  .icon-btn:hover,
-  .term-btn:hover {
-    border-color: var(--accent);
-    color: var(--ink);
-  }
-  .term-btn {
-    font-size: 12px;
+    color: var(--volt-ink);
   }
   .i-moon {
     display: none;
@@ -183,19 +242,113 @@ const links = [
   :global([data-theme='dark']) .i-sun {
     display: none;
   }
-  @media (max-width: 900px) {
-    .nav {
-      display: none;
+
+  .menu-btn {
+    display: none;
+  }
+  .menu-icon {
+    display: grid;
+    gap: 5px;
+    width: 16px;
+  }
+  .menu-icon i {
+    display: block;
+    height: 1.5px;
+    background: currentColor;
+    transition:
+      translate var(--dur-2) var(--ease-out),
+      rotate var(--dur-2) var(--ease-out);
+  }
+  .menu-btn[aria-expanded='true'] .menu-icon i:first-child {
+    translate: 0 3.25px;
+    rotate: 45deg;
+  }
+  .menu-btn[aria-expanded='true'] .menu-icon i:last-child {
+    translate: 0 -3.25px;
+    rotate: -45deg;
+  }
+
+  .nav {
+    margin-left: auto;
+  }
+
+  /* ---------- < 1024 px: panel de menú ---------- */
+  @media (max-width: 1023.98px) {
+    .menu-btn {
+      display: inline-grid;
     }
-    .tools {
-      margin-left: auto;
+    :global(.js) .nav {
+      position: fixed;
+      inset: var(--header-h) 0 0 0;
+      z-index: var(--z-menu);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: var(--space-xl);
+      margin: 0;
+      padding: var(--space-xl) var(--gutter) calc(var(--space-xl) + env(safe-area-inset-bottom));
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      background-color: var(--bg);
+      background-image: radial-gradient(var(--fx-dot) 1px, transparent 1.2px);
+      background-size: var(--cell) var(--cell);
+      visibility: hidden;
+      clip-path: inset(0 0 100% 0);
+      transition:
+        clip-path var(--dur-3) var(--ease-out),
+        visibility 0s linear var(--dur-3);
+    }
+    :global(.js) .hdr:global(.is-menu-open) .nav {
+      visibility: visible;
+      clip-path: inset(0 0 0 0);
+      transition:
+        clip-path var(--dur-3) var(--ease-out),
+        visibility 0s;
+    }
+    :global(.js) .nav-list {
+      flex-direction: column;
+      gap: 0;
+      border-top: 1px solid var(--line);
+    }
+    :global(.js) .nav-list li {
+      border-bottom: 1px solid var(--line);
+    }
+    :global(.js) .nav-list a {
+      display: flex;
+      align-items: baseline;
+      gap: var(--space-s);
+      padding: var(--space-s) 0;
+      font-size: var(--step-3);
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      color: var(--ink);
+    }
+    :global(.js) .nav-idx {
+      font-size: var(--step--1);
+      letter-spacing: 0;
+    }
+    :global(.js) .nav-foot {
+      display: grid;
+      gap: var(--space-2xs);
+      font-size: var(--step--1);
+    }
+
+    /* Sin JS: fila desplazable bajo la cabecera. */
+    :global(html:not(.js)) .hdr-in {
+      flex-wrap: wrap;
+      height: auto;
+      padding-block: 10px;
+      row-gap: 4px;
+    }
+    :global(html:not(.js)) .nav {
+      order: 3;
+      width: 100%;
+      margin: 0;
+      overflow-x: auto;
     }
   }
-  @media (max-width: 420px) {
-    .brand-path .muted {
-      display: none;
-    }
-    .term-btn kbd {
+  @media (max-width: 379.98px) {
+    .brand-name {
       display: none;
     }
   }
