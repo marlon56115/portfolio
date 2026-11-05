@@ -1,4 +1,4 @@
-/* Base: reset, tipografía, maquetación y accesibilidad. Congelado para la fase 2. */
+/* Base: reset, tipografía, maquetación y accesibilidad. */
 
 *,
 *::before,
@@ -152,24 +152,6 @@ code {
   height: 1px;
   translate: -50% 0;
   background: linear-gradient(90deg, var(--line-strong) 0 12px, var(--line) 12px);
-}
-
-/* Rejilla de 12 / 8 / 4 columnas para quien la quiera; las secciones pueden usar su propio grid. */
-.grid-cols {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-m);
-}
-@media (min-width: 768px) {
-  .grid-cols {
-    grid-template-columns: repeat(8, minmax(0, 1fr));
-  }
-}
-@media (min-width: 1024px) {
-  .grid-cols {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: var(--space-l);
-  }
 }
 
 /* ---------- accesibilidad ---------- */

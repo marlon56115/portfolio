@@ -1,4 +1,4 @@
-// Proyectos propios. Dueño en la fase 2: pf-work.
+// Proyectos propios.
 // Privacidad: la plataforma propia se describe en general (todo como código, GitOps, respaldos,
 // observabilidad, seguridad en capas), sin hardware, nombres internos, reglas de red ni cómo se expone.
 

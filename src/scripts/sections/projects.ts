@@ -1,4 +1,4 @@
-// Proyectos: galerías con lightbox y la secuencia de capas de la plataforma. Dueño en la fase 2: pf-work.
+// Proyectos: galerías con lightbox y la secuencia de capas de la plataforma.
 
 import { safe } from '../../lib/dom';
 import { initGalleries } from '../work/gallery';

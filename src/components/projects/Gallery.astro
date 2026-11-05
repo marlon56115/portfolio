@@ -81,7 +81,7 @@ const n = slides.length;
                       sizes="(min-width: 1200px) 660px, (min-width: 1024px) 56vw, calc(100vw - 34px)"
                       quality={80}
                       format="webp"
-                      loading={i === 0 ? 'eager' : 'lazy'}
+                      loading="lazy"
                     />
                     {s.dark && (
                       <Image
@@ -92,7 +92,7 @@ const n = slides.length;
                         sizes="(min-width: 1200px) 660px, (min-width: 1024px) 56vw, calc(100vw - 34px)"
                         quality={80}
                         format="webp"
-                        loading={i === 0 ? 'eager' : 'lazy'}
+                        loading="lazy"
                       />
                     )}
                   </>

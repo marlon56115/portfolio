@@ -1,4 +1,4 @@
-// Hero. Dueño en la fase 2: pf-hero.
+// Hero.
 // - LED y línea de estado (barra de la terminal): si el servidor responde, "autoalojado · en línea 3d".
 // - Retrato (scripts/hero/portrait.ts) y canales (scripts/hero/channels.ts).
 // La terminal la inicia main.ts (scripts/terminal.ts).

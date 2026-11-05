@@ -1,4 +1,4 @@
-// Experiencia laboral. Dueño en la fase 2: pf-work.
+// Experiencia laboral.
 // Las duraciones no se escriben a mano: se calculan desde `from`/`to` con src/lib/time.ts
 // (al construir y de nuevo en el cliente, para que el puesto actual siga al día).
 

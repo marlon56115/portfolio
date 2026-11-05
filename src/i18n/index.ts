@@ -1,5 +1,4 @@
 // Punto de entrada del texto: `dict[lang]` junta todos los archivos por sección.
-// Cada sesión de la fase 2 edita solo su archivo (ver "Ownership map" en DESIGN.md).
 
 import { common, careerStart, langs, type Lang } from './common';
 import { hero } from './hero';

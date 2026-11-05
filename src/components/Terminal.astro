@@ -1,5 +1,5 @@
 ---
-// Datos de la terminal. Home.astro (congelado) lo renderiza al final de la página; la ventana de la
+// Datos de la terminal. Home.astro lo renderiza al final de la página; la ventana de la
 // terminal vive en el hero (src/components/hero/TerminalWindow.astro). Aquí solo queda el bloque JSON
 // (no ejecutable: la CSP no lo afecta; `<` escapado).
 import type { Lang } from '../i18n';
@@ -11,7 +11,7 @@ interface Props {
 const { lang } = Astro.props;
 const t = dict[lang];
 
-// Lectura defensiva: otras secciones (pf-work) pueden cambiar la forma de sus datos.
+// Lectura defensiva: otras secciones pueden cambiar la forma de sus datos.
 const data = {
   lang,
   name: t.name,

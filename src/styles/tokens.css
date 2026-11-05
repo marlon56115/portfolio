@@ -1,7 +1,6 @@
 /*
  * Tokens de diseño · concepto "Signal": osciloscopio + placa de circuito.
  * Oscuro primero. Valores y contrastes documentados en DESIGN.md.
- * Congelado para la fase 2: solo cambios aditivos (tokens nuevos), nunca renombrar.
  */
 
 :root {
@@ -120,12 +119,6 @@
   --z-cursor: 90;
   --z-skip: 100;
 
-  /* ---------- alias heredados (no usar en código nuevo; la fase 2 los retira) ---------- */
-  --accent: var(--volt-ink);
-  --accent-ink: var(--volt-ink);
-  --accent-soft: var(--volt-soft);
-  --grid: rgb(168 182 195 / 0.05);
-  --shadow: var(--shadow-1);
 }
 
 /* ---------- color · claro ---------- */
@@ -163,7 +156,6 @@
     --shadow-1: 0 1px 0 rgb(255 255 255 / 0.8) inset, 0 12px 32px -20px rgb(10 16 24 / 0.28);
     --shadow-2: 0 1px 0 rgb(255 255 255 / 0.8) inset, 0 24px 64px -28px rgb(10 16 24 / 0.35);
     --header-bg: rgb(238 242 245 / 0.82);
-    --grid: rgb(10 16 24 / 0.05);
     color-scheme: light;
   }
 }
@@ -200,6 +192,5 @@
   --shadow-1: 0 1px 0 rgb(255 255 255 / 0.8) inset, 0 12px 32px -20px rgb(10 16 24 / 0.28);
   --shadow-2: 0 1px 0 rgb(255 255 255 / 0.8) inset, 0 24px 64px -28px rgb(10 16 24 / 0.35);
   --header-bg: rgb(238 242 245 / 0.82);
-  --grid: rgb(10 16 24 / 0.05);
   color-scheme: light;
 }

@@ -1,4 +1,4 @@
-// Textos de la terminal del hero. Dueño en la fase 2: pf-hero.
+// Textos de la terminal del hero.
 // Lo usan Terminal.astro / hero/TerminalWindow.astro (vía dict) y src/scripts/terminal.ts (importa `terminal`).
 // Privacidad: host genérico; nada de hardware, sistema operativo, versiones ni nombres internos (DESIGN.md §7).
 // Honestidad: es una shell simulada en el navegador; se dice en la interfaz y en `help`.

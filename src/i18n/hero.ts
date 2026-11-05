@@ -1,4 +1,4 @@
-// Texto del hero. Dueño en la fase 2: pf-hero.
+// Texto del hero.
 // Posicionamiento: full-stack de punta a punta (desarrollo, despliegue, infraestructura, datos) y fuerte en IA.
 // Los años de experiencia NO van aquí: se calculan con src/lib/time.ts desde `careerStart`.
 

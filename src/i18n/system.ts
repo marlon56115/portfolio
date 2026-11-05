@@ -1,4 +1,4 @@
-// Texto de la sección "autoalojado". Dueño: pf-system.
+// Texto de la sección "autoalojado".
 // Privacidad (DESIGN.md §7): decir "infraestructura propia / autoalojado". Nada de host, hardware,
 // versiones, namespaces, nombres de servicios internos, IP, puertos, reglas de red ni del túnel.
 // Cada etapa explica *para qué* sirve, no *cómo* está protegida.

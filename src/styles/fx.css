@@ -121,9 +121,6 @@
 [data-scramble] {
   font-variant-numeric: tabular-nums;
 }
-.scramble__glyph {
-  color: var(--ion-ink);
-}
 
 /* ---------- aparición al hacer scroll (core/reveal.ts) ---------- */
 /* Solo con JS: sin JS (o sin IntersectionObserver) todo es visible. */

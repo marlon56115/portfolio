@@ -1,7 +1,7 @@
 /*
  * Kit de componentes (CSS puro). Uso y ejemplos en DESIGN.md → "Component kit".
  * Regla: los chaflanes (clip-path) van en ::before/::after para no recortar el anillo de foco.
- * Congelado para la fase 2: solo variantes nuevas (aditivas).
+ *
  */
 
 /* ---------- etiquetas mono ---------- */
@@ -157,22 +157,14 @@
   translate: 3px 0;
 }
 
-.btn--ghost,
-.btn-ghost {
+.btn--ghost {
   --btn-bg: var(--surface);
   --btn-fg: var(--ink);
   --btn-line: var(--line-strong);
 }
-.btn--ghost:hover,
-.btn-ghost:hover {
+.btn--ghost:hover {
   --btn-bg: var(--surface-2);
   --btn-line: var(--ion);
-}
-.btn--sm {
-  --cut: 7px;
-  min-height: 34px;
-  padding: 0 var(--space-s);
-  font-size: var(--step--2);
 }
 
 /* Botón cuadrado para íconos (tema, menú). */
@@ -354,23 +346,6 @@
     linear-gradient(var(--muted), var(--muted)) center / 1px 100% no-repeat;
 }
 
-/* Fondo de puntos estático (para tarjetas; el de página es el canvas). */
-.dot-grid {
-  background-image: radial-gradient(var(--fx-dot) 1px, transparent 1.2px);
-  background-size: var(--cell) var(--cell);
-}
-
-/* Divisor con pad: <hr class="trace"> */
-.trace {
-  height: 7px;
-  margin: 0;
-  border: 0;
-  background:
-    radial-gradient(circle, var(--line-strong) 0 2.5px, transparent 3px) left center / 7px 7px no-repeat,
-    radial-gradient(circle, var(--line-strong) 0 2.5px, transparent 3px) right center / 7px 7px no-repeat,
-    linear-gradient(var(--line) 0 0) center / calc(100% - 14px) 1px no-repeat;
-}
-
 /* ---------- LED de estado ---------- */
 .led {
   --led: var(--ok);
@@ -434,21 +409,6 @@ kbd,
 }
 .link:hover {
   background-size: 100% 1px, 100% 1px;
-}
-.link--ion {
-  color: var(--ion-ink);
-}
-.link--volt {
-  color: var(--volt-ink);
-}
-/* Flecha para enlaces externos: <span class="ext" aria-hidden="true">↗</span> */
-.ext {
-  display: inline-block;
-  font-family: var(--font-mono);
-  transition: translate var(--dur-2) var(--ease-out);
-}
-a:hover .ext {
-  translate: 2px -2px;
 }
 
 .arrow {

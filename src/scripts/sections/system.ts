@@ -1,4 +1,4 @@
-// Sección "autoalojado": panel en vivo y flujos interactivos. Dueño: pf-system.
+// Sección "autoalojado": panel en vivo y flujos interactivos.
 // - Panel: consulta /api/status solo mientras está a la vista y la pestaña visible.
 // - Flujos: pasar el cursor, enfocar o tocar una etapa muestra su descripción.
 // - Cada respuesta real dispara un "ping" que recorre el camino de ida y vuelta.

@@ -1,5 +1,5 @@
 // Contacto: copiar el correo, hora local en vivo, foco de luz en las tarjetas y el borrador mailto:.
-// Dueño en la fase 2: pf-contact. Nada de innerHTML: solo textContent y atributos.
+// Nada de innerHTML: solo textContent y atributos.
 
 import { $, $$, finePointer, pageLang, reducedMotion } from '../../lib/dom';
 

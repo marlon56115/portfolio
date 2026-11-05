@@ -1,4 +1,4 @@
-// Stack, formación y certificaciones. Dueño en la fase 2: pf-work.
+// Stack, formación y certificaciones.
 // Cada herramienta lleva los "frentes" del hero en los que la uso (dev, deploy, infra, data, ai).
 // Skills.astro cruza estos nombres con el stack de cada puesto y proyecto para mostrar dónde se usó.
 // `v` (lista de nombres por grupo) se mantiene porque la terminal lo lee.

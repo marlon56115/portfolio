@@ -1,5 +1,4 @@
 // Texto compartido por todo el sitio: datos de contacto, meta, navegación, controles y pie.
-// Archivo de la fase 1 (congelado para la fase 2 salvo cambios aditivos; ver DESIGN.md).
 // Regla de privacidad: nada de "homelab", nombres de host, "mi casa", hardware ni versiones.
 
 export type Lang = 'es' | 'en';

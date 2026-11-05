@@ -1,4 +1,4 @@
-// Sección de contacto. Dueño en la fase 2: pf-contact.
+// Sección de contacto.
 // El correo, LinkedIn y GitHub viven en common.ts (facts); aquí solo el texto de la sección.
 
 /**

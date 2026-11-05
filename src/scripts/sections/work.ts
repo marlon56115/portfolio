@@ -1,4 +1,4 @@
-// Experiencia y stack. Dueño en la fase 2: pf-work.
+// Experiencia y stack.
 // main.ts solo llama a initWork(); la matriz del stack (Skills.astro) también se inicia aquí
 // porque no tiene un init propio en main.ts.
 

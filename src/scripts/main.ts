@@ -1,5 +1,5 @@
 // Punto de entrada del cliente: solo importa e inicia. Cada módulo es dueño de su lógica
-// (ver "Ownership map" en DESIGN.md). Un error en un módulo no detiene a los demás.
+// (ver DESIGN.md §9). Un error en un módulo no detiene a los demás.
 
 import { pageLang, safe } from '../lib/dom';
 import { hydrateSince } from '../lib/time';
