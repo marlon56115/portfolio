@@ -1,6 +1,7 @@
 ---
 // Terminal integrada en el hero. El HTML trae ya la transcripción de la intro (whoami + skills --top):
 // sin JS se lee igual; con JS, src/scripts/terminal.ts la vuelve a "teclear" y deja el prompt listo.
+// En móvil (< 768 px, con JS) arranca plegada en una barra de una línea; la intro no corre hasta desplegarla.
 // Toda la salida dinámica se construye con nodos + textContent (Trusted Types).
 import type { Lang } from '../../i18n';
 import { dict } from '../../i18n';
@@ -16,57 +17,65 @@ const chips = ['help', 'whoami', 'skills --top', 'focus ai', 'experience', 'proj
 const pad = (v: string, n: number) => v.padEnd(n, ' ');
 ---
 
-<div class="term" data-terminal role="region" aria-label={`${s.title} · ${s.simNote}`}>
-  <div class="term__bar">
+<div class="term" data-terminal role="region" aria-label={s.title}>
+  <button type="button" class="term__toggle" data-terminal-toggle aria-expanded="false" aria-controls="term-body" data-js-only>
     <span class="term__dots" aria-hidden="true"><i></i><i></i><i></i></span>
-    <span class="term__title">{p.user}@{p.host}: {p.path}</span>
-    <span class="term__status"><span class="led is-pulse" data-hero-led></span><span data-hero-status>{s.nf.hostValue}</span></span>
+    <span class="term__tp" aria-hidden="true"><span class="u">{p.user}</span>@<span class="h">{p.host}</span>:<span class="p">{p.path}</span>$</span>
+    <span class="term__tl"><span class="term__tl-open">{s.open}</span><span class="term__tl-close">{s.close}</span></span>
+    <svg class="term__chev" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" /></svg>
+  </button>
+
+  <div class="term__body" id="term-body" data-terminal-body>
+    <div class="term__inner">
+      <div class="term__bar">
+        <span class="term__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="term__title">{p.user}@{p.host}: {p.path}</span>
+        <span class="term__status"><span class="led is-pulse" data-hero-led></span><span data-hero-status>{s.nf.hostValue}</span></span>
+      </div>
+
+      <div class="term__out is-pending" data-terminal-out role="log" aria-live="polite">
+        <div class="r"><span class="c-dim">{s.welcome}</span></div>
+        <div class="r" data-cmd><span class="c-ok">{p.user}@{p.host}</span><span class="c-dim">:{p.path}$ </span><span class="c-cmd">whoami</span></div>
+        <div class="r"><span class="c-ok">{t.name}</span><span class="c-dim"> — </span>{t.hero.title}</div>
+        <div class="r"><span class="c-dim">{t.location}</span></div>
+        <div class="r" data-cmd><span class="c-ok">{p.user}@{p.host}</span><span class="c-dim">:{p.path}$ </span><span class="c-cmd">skills --top</span></div>
+        {
+          t.hero.capabilities.map((c, i) => (
+            <div class="r" data-ch={c.k}>
+              <span class="c-dim">{`CH${i + 1} `}</span>
+              <span class="c-acc">{pad(c.k, 7)}</span>
+              {c.tools.join(' · ')}
+            </div>
+          ))
+        }
+      </div>
+
+      <form class="term__line" data-terminal-form data-js-only autocomplete="off">
+        <label class="term__prompt" for="term-in"><span class="term__who"><span class="u">{p.user}</span>@<span class="h">{p.host}</span>:</span><span class="p">{p.path}</span>$</label>
+        <span class="term__typed" data-terminal-typed aria-hidden="true"></span><span class="term__caret" aria-hidden="true"></span>
+        <input
+          id="term-in"
+          class="term__in"
+          data-terminal-in
+          type="text"
+          aria-label={s.inputLabel}
+          spellcheck="false"
+          autocapitalize="off"
+          autocomplete="off"
+          maxlength="120"
+          enterkeyhint="send"
+        />
+      </form>
+
+      <div class="term__chips" data-js-only role="toolbar" aria-label={s.chipsLabel}>
+        {chips.map((c) => <button type="button" class="term__chip" data-cmd={c}>{c}</button>)}
+      </div>
+    </div>
   </div>
-
-  <div class="term__out is-pending" data-terminal-out role="log" aria-live="polite">
-    <div class="r"><span class="c-dim">{s.welcome}</span></div>
-    <div class="r" data-cmd><span class="c-ok">{p.user}@{p.host}</span><span class="c-dim">:{p.path}$ </span><span class="c-cmd">whoami</span></div>
-    <div class="r"><span class="c-ok">{t.name}</span><span class="c-dim"> — </span>{t.hero.title}</div>
-    <div class="r"><span class="c-dim">{t.location}</span></div>
-    <div class="r" data-cmd><span class="c-ok">{p.user}@{p.host}</span><span class="c-dim">:{p.path}$ </span><span class="c-cmd">skills --top</span></div>
-    {
-      t.hero.capabilities.map((c, i) => (
-        <div class="r" data-ch={c.k}>
-          <span class="c-dim">{`CH${i + 1} `}</span>
-          <span class="c-acc">{pad(c.k, 7)}</span>
-          {c.tools.join(' · ')}
-        </div>
-      ))
-    }
-  </div>
-
-  <form class="term__line" data-terminal-form data-js-only autocomplete="off">
-    <label class="term__prompt" for="term-in"><span class="term__who"><span class="u">{p.user}</span>@<span class="h">{p.host}</span>:</span><span class="p">{p.path}</span>$</label>
-    <span class="term__typed" data-terminal-typed aria-hidden="true"></span><span class="term__caret" aria-hidden="true"></span>
-    <input
-      id="term-in"
-      class="term__in"
-      data-terminal-in
-      type="text"
-      aria-label={s.inputLabel}
-      spellcheck="false"
-      autocapitalize="off"
-      autocomplete="off"
-      maxlength="120"
-      enterkeyhint="send"
-    />
-  </form>
-
-  <div class="term__chips" data-js-only role="toolbar" aria-label={s.chipsLabel}>
-    {chips.map((c) => <button type="button" class="term__chip" data-cmd={c}>{c}</button>)}
-  </div>
-
-  <p class="term__note"><span class="term__sim" aria-hidden="true">sim</span>{s.simNote}</p>
 </div>
 
 <style>
   .term {
-    --t-line: rgb(214 224 232 / 0.1);
     position: relative;
     isolation: isolate;
     display: flex;
@@ -76,7 +85,7 @@ const pad = (v: string, n: number) => v.padEnd(n, ' ');
     font-family: var(--font-mono);
     font-size: 13px;
     line-height: 1.6;
-    filter: drop-shadow(0 24px 40px rgb(0 0 0 / 0.35));
+    filter: drop-shadow(0 24px 40px var(--term-shadow));
   }
   /* borde + fondo achaflanados en pseudos (no recortan el foco de los controles) */
   .term::before,
@@ -88,7 +97,7 @@ const pad = (v: string, n: number) => v.padEnd(n, ' ');
   }
   .term::before {
     inset: 0;
-    background: linear-gradient(160deg, color-mix(in srgb, var(--volt) 55%, transparent), rgb(214 224 232 / 0.14) 30%, rgb(214 224 232 / 0.14));
+    background: linear-gradient(160deg, var(--term-edge-acc), var(--term-edge) 30%, var(--term-edge));
   }
   .term::after {
     inset: 1px;
@@ -100,7 +109,7 @@ const pad = (v: string, n: number) => v.padEnd(n, ' ');
     outline-offset: 3px;
   }
   .term:focus-within::before {
-    background: linear-gradient(160deg, var(--volt), color-mix(in srgb, var(--ion) 50%, transparent) 45%, rgb(214 224 232 / 0.2));
+    background: linear-gradient(160deg, var(--term-acc), color-mix(in srgb, var(--term-blue) 50%, transparent) 45%, var(--term-edge-hi));
   }
 
   .term__bar {
@@ -109,7 +118,7 @@ const pad = (v: string, n: number) => v.padEnd(n, ' ');
     gap: 12px;
     min-height: 36px;
     padding: 0 14px;
-    border-bottom: 1px solid var(--t-line);
+    border-bottom: 1px solid var(--term-line);
     color: var(--term-dim);
     font-size: 12px;
   }
@@ -120,10 +129,10 @@ const pad = (v: string, n: number) => v.padEnd(n, ' ');
   .term__dots i {
     width: 7px;
     height: 7px;
-    background: rgb(214 224 232 / 0.18);
+    background: var(--term-dot);
   }
   .term__dots i:first-child {
-    background: var(--volt);
+    background: var(--term-acc);
   }
   .term__title {
     flex: 1;
@@ -140,7 +149,7 @@ const pad = (v: string, n: number) => v.padEnd(n, ' ');
     font-size: 11px;
   }
   .term__status .led {
-    --led: #5be38a;
+    --led: var(--term-ok);
   }
   .term__status .led.is-off {
     --led: var(--term-dim);
@@ -153,7 +162,7 @@ const pad = (v: string, n: number) => v.padEnd(n, ' ');
     padding: 12px 14px 4px;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
-    scrollbar-color: rgb(214 224 232 / 0.2) transparent;
+    scrollbar-color: var(--term-scroll) transparent;
     scrollbar-width: thin;
     overscroll-behavior: contain;
   }
@@ -175,28 +184,28 @@ const pad = (v: string, n: number) => v.padEnd(n, ' ');
     transition: background-color var(--dur-1) var(--ease-out);
   }
   .term__out :global(.c-cmd) {
-    color: #f1f5f8;
+    color: var(--term-cmd);
   }
   .term__out :global(.c-dim) {
     color: var(--term-dim);
   }
   .term__out :global(.c-acc) {
-    color: #c8ff3d;
+    color: var(--term-acc);
   }
   .term__out :global(.c-ok) {
-    color: #5be38a;
+    color: var(--term-ok);
   }
   .term__out :global(.c-warn) {
-    color: #ffc93d;
+    color: var(--term-warn);
   }
   .term__out :global(.c-err) {
-    color: #ff5c7a;
+    color: var(--term-err);
   }
   .term__out :global(.c-blue) {
-    color: #38e1ff;
+    color: var(--term-blue);
   }
   .term__out :global(a) {
-    color: #38e1ff;
+    color: var(--term-blue);
     text-underline-offset: 3px;
   }
   /* El canal activo del hero ilumina sus líneas en la salida. */
@@ -205,8 +214,8 @@ const pad = (v: string, n: number) => v.padEnd(n, ' ');
   .term__out[data-hl='infra'] :global([data-ch='infra']),
   .term__out[data-hl='data'] :global([data-ch='data']),
   .term__out[data-hl='ai'] :global([data-ch='ai']) {
-    background: rgb(200 255 61 / 0.1);
-    box-shadow: inset 2px 0 0 #c8ff3d;
+    background: var(--term-hl);
+    box-shadow: inset 2px 0 0 var(--term-acc);
   }
 
   .term__line {
@@ -223,24 +232,24 @@ const pad = (v: string, n: number) => v.padEnd(n, ' ');
     color: var(--term-dim);
   }
   .u {
-    color: #5be38a;
+    color: var(--term-ok);
   }
   .h {
-    color: #c8ff3d;
+    color: var(--term-acc);
   }
   .p {
-    color: #38e1ff;
+    color: var(--term-blue);
   }
   .term__typed {
     white-space: pre;
-    color: #f1f5f8;
+    color: var(--term-cmd);
   }
   .term__caret {
     display: none;
     flex: none;
     width: 0.6em;
     height: 1.15em;
-    background: #c8ff3d;
+    background: var(--term-acc);
     animation: caret 1.05s steps(1) infinite;
   }
   .term__line.is-idle .term__caret {
@@ -264,10 +273,10 @@ const pad = (v: string, n: number) => v.padEnd(n, ' ');
     border: 0;
     outline: 0;
     background: transparent;
-    color: #f1f5f8;
+    color: var(--term-cmd);
     font: inherit;
     font-size: 16px; /* 16 px: iOS no hace zoom al enfocar */
-    caret-color: #c8ff3d;
+    caret-color: var(--term-acc);
   }
   .term__line.is-idle .term__in {
     caret-color: transparent;
@@ -276,7 +285,7 @@ const pad = (v: string, n: number) => v.padEnd(n, ' ');
   .term__chips {
     display: flex;
     gap: 6px;
-    padding: 6px 14px 10px;
+    padding: 6px 14px 12px;
     overflow-x: auto;
     scrollbar-width: none;
     overscroll-behavior-x: contain;
@@ -289,9 +298,9 @@ const pad = (v: string, n: number) => v.padEnd(n, ' ');
     flex: none;
     min-height: 44px;
     padding: 0 12px;
-    border: 1px solid rgb(214 224 232 / 0.16);
+    border: 1px solid var(--term-chip-line);
     border-radius: var(--radius);
-    background: rgb(214 224 232 / 0.04);
+    background: var(--term-chip-bg);
     color: var(--term-ink);
     font: inherit;
     font-size: 12px;
@@ -306,11 +315,11 @@ const pad = (v: string, n: number) => v.padEnd(n, ' ');
     color: var(--term-dim);
   }
   .term__chip:hover {
-    border-color: #c8ff3d;
-    color: #c8ff3d;
+    border-color: var(--term-acc);
+    color: var(--term-acc);
   }
   .term__chip:focus-visible {
-    outline: 2px solid #38e1ff;
+    outline: 2px solid var(--term-blue);
     outline-offset: -2px;
   }
   @media (pointer: fine) {
@@ -319,27 +328,92 @@ const pad = (v: string, n: number) => v.padEnd(n, ' ');
     }
   }
 
-  .term__note {
-    display: flex;
+
+  /* ---------- plegado (móvil, con JS) ---------- */
+  .term__toggle {
+    display: none;
     align-items: center;
-    gap: 8px;
-    margin: 0;
-    padding: 8px 14px 10px;
-    border-top: 1px solid var(--t-line);
-    color: var(--term-dim);
-    font-size: 11px;
-    line-height: 1.4;
+    gap: 10px;
+    width: 100%;
+    min-height: 48px;
+    padding: 0 14px;
+    border: 0;
+    background: none;
+    color: var(--term-ink);
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
   }
-  .term__sim {
+  .term__toggle:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+  }
+  .term__tp {
     flex: none;
-    padding: 1px 5px;
-    border: 1px solid rgb(56 225 255 / 0.5);
-    color: #38e1ff;
-    font-family: var(--font-display);
-    font-size: 10px;
-    font-stretch: 87.5%;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    color: var(--term-dim);
+  }
+  .term__tl {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--term-cmd);
+  }
+  .term__tl-close,
+  .term__toggle[aria-expanded='true'] .term__tl-open {
+    display: none;
+  }
+  .term__toggle[aria-expanded='true'] .term__tl-close {
+    display: inline;
+    color: var(--term-dim);
+  }
+  .term__chev {
+    flex: none;
+    color: var(--term-acc);
+    transition: rotate var(--dur-3) var(--ease-out);
+  }
+  .term__toggle[aria-expanded='true'] .term__chev {
+    rotate: 180deg;
+  }
+  .term__inner {
+    min-width: 0;
+    min-height: 0;
+  }
+  @media (max-width: 767.98px) {
+    :global(html.js) .term__toggle {
+      display: flex;
+    }
+    /* la barra del escritorio sobra: el botón hace de barra */
+    :global(html.js) .term__bar {
+      display: none;
+    }
+    :global(html.js) .term__toggle[aria-expanded='true'] {
+      border-bottom: 1px solid var(--term-line);
+    }
+    :global(html.js) .term__body {
+      display: grid;
+      grid-template-rows: 0fr;
+      visibility: hidden;
+      transition:
+        grid-template-rows var(--dur-3) var(--ease-out),
+        visibility 0s var(--dur-3);
+    }
+    :global(html.js) .term.is-open .term__body {
+      grid-template-rows: 1fr;
+      visibility: visible;
+      transition: grid-template-rows var(--dur-3) var(--ease-out);
+    }
+    :global(html.js) .term__inner {
+      overflow: hidden;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .term__body,
+    .term__chev {
+      transition: none !important;
+    }
   }
   @media (max-width: 419.98px) {
     .term__who {
