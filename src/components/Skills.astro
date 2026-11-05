@@ -1,6 +1,11 @@
 ---
+// Stack como matriz de frentes: cada herramienta lleva 5 pads (dev, deploy, infra, data, ai) encendidos
+// según dónde la uso. Elegir un frente ilumina sus herramientas y lista los puestos y proyectos en que
+// se usaron (cruce automático con el stack de cada puesto/proyecto). Sin JS: se ve todo y las 5 listas.
+// Interacción en src/scripts/work/skills.ts (la inicia initWork).
 import type { Lang } from '../i18n';
 import { dict } from '../i18n';
+import type { Front, Tool } from '../i18n/skills';
 import { sectionIndex } from '../lib/sections';
 import SectionHead from './ui/SectionHead.astro';
 
@@ -8,129 +13,436 @@ interface Props {
   lang: Lang;
 }
 const { lang } = Astro.props;
-const s = dict[lang].skills;
+const t = dict[lang];
+const s = t.skills;
+const order: Front[] = s.fronts.map((f) => f.k);
+
+// Índice nombre/alias → herramienta, para cruzar con los stacks de puestos y proyectos.
+const norm = (x: string) => x.toLowerCase().replace(/\s+/g, ' ').trim();
+const index = new Map<string, Tool>();
+s.groups.forEach((g) => g.items.forEach((tool) => [tool.n, ...(tool.alias ?? [])].forEach((n) => index.set(norm(n), tool))));
+
+const allTools = s.groups.flatMap((g) => g.items);
+const countFor = (f: Front) => allTools.filter((x) => x.f.includes(f)).length;
+
+interface Evidence {
+  href: string;
+  name: string;
+  kind: string;
+  tools: string[];
+}
+const evidence = (f: Front): Evidence[] => {
+  const match = (stack: string[]) => stack.filter((x) => index.get(norm(x))?.f.includes(f));
+  const jobs = t.jobs.map((j) => ({ href: `#job-${j.id}`, name: j.company, kind: s.jobTag, tools: match(j.stack) }));
+  const projects = t.projects.items.map((p) => ({ href: `#project-${p.slug}`, name: p.name, kind: s.projectTag, tools: match(p.stack) }));
+  return [...jobs, ...projects].filter((e) => e.tools.length > 0);
+};
 ---
 
 <section class="section" id="skills">
   <div class="wrap">
     <SectionHead index={sectionIndex('skills')} label={s.label} title={s.title} lead={s.lead} />
 
-    <div class="grid">
-      <dl class="table" data-reveal>
+    <div class="sk" data-skills data-front="">
+      <div class="fronts" role="group" aria-label={s.filter} data-js-only>
+        <button type="button" class="front front--all" data-front-btn="" aria-pressed="true">
+          <span class="f-t">{s.all}</span>
+          <span class="f-n mono">{allTools.length} {s.tools}</span>
+        </button>
         {
-          s.groups.map((g) => (
-            <div class="row">
-              <dt class="mono">{g.t}</dt>
-              <dd>
-                <ul class="chip-list">
-                  {g.v.map((v) => (
-                    <li class="chip">{v}</li>
-                  ))}
-                </ul>
-              </dd>
-            </div>
+          s.fronts.map((f, i) => (
+            <button type="button" class="front" data-front-btn={f.k} aria-pressed="false">
+              <span class="pads" aria-hidden="true">
+                {order.map((_, k) => (
+                  <i class:list={[{ on: k === i }]} />
+                ))}
+              </span>
+              <span class="f-t">{f.t}</span>
+              <span class="f-d">{f.d}</span>
+              <span class="f-n mono">
+                {countFor(f.k)} {s.tools}
+              </span>
+            </button>
           ))
         }
-      </dl>
+      </div>
 
-      <aside class="side" data-reveal>
-        <h3 class="side-t mono">{s.eduTitle}</h3>
-        <ul class="edu">
+      <div class="sk-main">
+        <div class="groups">
+          {
+            s.groups.map((g) => (
+              <section class="group" aria-label={g.t}>
+                <h3 class="label">{g.t}</h3>
+                <ul class="tools">
+                  {g.items.map((tool) => (
+                    <li class="tool" data-f={tool.f.join(' ')}>
+                      <span class="t-n">{tool.n}</span>
+                      <span class="pads" aria-hidden="true">
+                        {order.map((k) => (
+                          <i class:list={[{ on: tool.f.includes(k) }]} data-k={k} />
+                        ))}
+                      </span>
+                      <span class="visually-hidden">({tool.f.map((k) => s.fronts.find((x) => x.k === k)?.t).join(', ')})</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))
+          }
+        </div>
+
+        <aside class="where panel" aria-labelledby="where-h">
+          <div class="panel__bar">
+            <span class="led led--ion"></span>
+            <span class="panel__title" id="where-h">{s.usedIn}</span>
+          </div>
+          <div class="panel__body where-body" aria-live="polite">
+            <p class="where-pick" data-js-only>{s.pick}</p>
+            {
+              s.fronts.map((f) => (
+                <div class="where-list" data-where={f.k}>
+                  <p class="where-h">{f.t}</p>
+                  <ul>
+                    {evidence(f.k).map((e) => (
+                      <li>
+                        <a class="link" href={e.href}>
+                          {e.name}
+                        </a>
+                        <span class="tag">{e.kind}</span>
+                        <span class="w-tools mono">{e.tools.join(' · ')}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))
+            }
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <div class="sheet">
+      <div class="sheet-col">
+        <h3 class="label sheet-t">{s.eduTitle}</h3>
+        <ol class="edu">
           {
             s.edu.map((e) => (
-              <li>
+              <li class:list={[{ honor: e.honor }]}>
                 <p class="edu-t">{e.t}</p>
                 <p class="edu-s mono">{e.s}</p>
                 {e.n && <p class="edu-n">{e.n}</p>}
+                {e.honor && <span class="tag tag--honor">{s.honor}</span>}
               </li>
             ))
           }
+        </ol>
+      </div>
+      <div class="sheet-col">
+        <h3 class="label sheet-t">{s.certTitle}</h3>
+        <ul class="chip-list certs">
+          {s.certs.map((c) => <li class="chip chip--ion">{c}</li>)}
         </ul>
-        <h3 class="side-t mono">{s.certTitle}</h3>
-        <ul class="certs">
-          {s.certs.map((c) => <li>{c}</li>)}
-        </ul>
-      </aside>
+      </div>
     </div>
   </div>
 </section>
 
 <style>
-  .grid {
+  .sk {
     display: grid;
-    grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
-    gap: clamp(32px, 5vw, 64px);
+    gap: var(--space-l);
   }
-  .table {
-    margin: 0;
-    border-top: 1px solid var(--line);
-  }
-  .row {
+
+  /* ---------- selector de frentes ---------- */
+  .fronts {
     display: grid;
-    grid-template-columns: 150px minmax(0, 1fr);
-    gap: 16px;
-    padding: 16px 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2xs);
+  }
+  .front {
+    position: relative;
+    display: grid;
+    align-content: start;
+    gap: 4px;
+    min-height: 64px;
+    padding: var(--space-xs);
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    color: var(--ink-2);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition:
+      border-color var(--dur-1) var(--ease-out),
+      background-color var(--dur-1) var(--ease-out),
+      color var(--dur-1) var(--ease-out);
+  }
+  .front:hover {
+    border-color: var(--ion);
+    color: var(--ink);
+  }
+  .front[aria-pressed='true'] {
+    border-color: var(--volt-ink);
+    background: var(--volt-soft);
+    color: var(--ink);
+  }
+  .front[aria-pressed='true']::after {
+    content: '';
+    position: absolute;
+    top: -1px;
+    right: -1px;
+    width: 10px;
+    height: 10px;
+    background: var(--volt-ink);
+    clip-path: polygon(0 0, 100% 0, 100% 100%);
+  }
+  .f-t {
+    font-family: var(--font-display);
+    font-size: var(--step--1);
+    font-stretch: 87.5%;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .f-d {
+    display: none;
+    font-size: var(--step--1);
+    line-height: 1.4;
+  }
+  .f-n {
+    font-size: var(--step--2);
+    color: var(--muted);
+  }
+  .front[aria-pressed='true'] .f-n {
+    color: var(--volt-ink);
+  }
+
+  /* pads: 5 cuadros, uno por frente (mismo orden en botones y herramientas) */
+  .pads {
+    display: inline-flex;
+    gap: 3px;
+  }
+  .pads i {
+    width: 6px;
+    height: 6px;
+    border: 1px solid var(--line-strong);
+    transition:
+      background-color var(--dur-2) var(--ease-out),
+      border-color var(--dur-2) var(--ease-out);
+  }
+  .pads i.on {
+    background: var(--muted);
+    border-color: var(--muted);
+  }
+  .front .pads i.on,
+  .front[aria-pressed='true'] .pads i.on {
+    background: var(--volt-ink);
+    border-color: var(--volt-ink);
+  }
+
+  /* ---------- herramientas ---------- */
+  .sk-main {
+    display: grid;
+    gap: var(--space-l);
+  }
+  .groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+    gap: var(--space-l) var(--space-m);
+  }
+  .group {
+    display: grid;
+    gap: var(--space-xs);
+    align-content: start;
+  }
+  .group .label {
+    padding-bottom: var(--space-2xs);
     border-bottom: 1px solid var(--line);
   }
-  .row dt {
-    padding-top: 4px;
-    font-size: 12px;
-    color: var(--muted);
-    text-transform: lowercase;
+  .tools {
+    list-style: none;
+    display: grid;
   }
-  .row dd {
-    margin: 0;
+  .tool {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-xs);
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--line);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--ink-2);
+    transition:
+      opacity var(--dur-2) var(--ease-out),
+      color var(--dur-2) var(--ease-out);
   }
-  .side-t {
-    font-size: 12px;
+  .tool:last-child {
+    border-bottom: 0;
+  }
+  .t-n {
+    min-width: 0;
+  }
+
+  /* Frente activo: se encienden sus herramientas y su pad; el resto se atenúa. */
+  .sk[data-front='dev'] .tool:not([data-f~='dev']),
+  .sk[data-front='deploy'] .tool:not([data-f~='deploy']),
+  .sk[data-front='infra'] .tool:not([data-f~='infra']),
+  .sk[data-front='data'] .tool:not([data-f~='data']),
+  .sk[data-front='ai'] .tool:not([data-f~='ai']) {
+    opacity: 0.32;
+  }
+  .sk[data-front='dev'] .tool[data-f~='dev'],
+  .sk[data-front='deploy'] .tool[data-f~='deploy'],
+  .sk[data-front='infra'] .tool[data-f~='infra'],
+  .sk[data-front='data'] .tool[data-f~='data'],
+  .sk[data-front='ai'] .tool[data-f~='ai'] {
+    color: var(--ink);
+  }
+  .sk[data-front='dev'] .pads i[data-k='dev'].on,
+  .sk[data-front='deploy'] .pads i[data-k='deploy'].on,
+  .sk[data-front='infra'] .pads i[data-k='infra'].on,
+  .sk[data-front='data'] .pads i[data-k='data'].on,
+  .sk[data-front='ai'] .pads i[data-k='ai'].on {
+    background: var(--volt-ink);
+    border-color: var(--volt-ink);
+  }
+
+  /* ---------- dónde se usó ---------- */
+  /* En pantallas estrechas va justo bajo el selector, para ver el efecto sin hacer scroll. */
+  .where {
+    order: -1;
+  }
+  .where-body {
+    display: grid;
+    gap: var(--space-m);
+  }
+  .where-pick {
+    color: var(--ink-2);
+    font-size: var(--step--1);
+  }
+  .where-h {
+    margin-bottom: var(--space-2xs);
+    font-family: var(--font-display);
+    font-stretch: 87.5%;
+    font-weight: 600;
+    font-size: var(--step--1);
+    color: var(--volt-ink);
+  }
+  .where-list ul {
+    list-style: none;
+    display: grid;
+    gap: var(--space-xs);
+  }
+  .where-list li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px var(--space-2xs);
+  }
+  .where-list .link {
+    display: inline-block;
+    padding: 6px 0;
     font-weight: 500;
+  }
+  .w-tools {
+    flex-basis: 100%;
+    font-size: var(--step--2);
     color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-bottom: 14px;
+  }
+  .where-list .tag {
+    padding: 1px 6px;
+    font-size: 10.5px;
+  }
+  :global(.js) .where-list {
+    display: none;
+  }
+  .sk[data-front='dev'] .where-list[data-where='dev'],
+  .sk[data-front='deploy'] .where-list[data-where='deploy'],
+  .sk[data-front='infra'] .where-list[data-where='infra'],
+  .sk[data-front='data'] .where-list[data-where='data'],
+  .sk[data-front='ai'] .where-list[data-where='ai'] {
+    display: block;
+  }
+  .sk:not([data-front='']) .where-pick {
+    display: none;
+  }
+
+  /* ---------- formación ---------- */
+  .sheet {
+    display: grid;
+    gap: var(--space-xl);
+    margin-top: var(--space-2xl);
+    padding-top: var(--space-l);
+    border-top: 1px solid var(--line);
+  }
+  .sheet-t {
+    margin-bottom: var(--space-s);
   }
   .edu {
     list-style: none;
     display: grid;
-    gap: 18px;
-    margin-bottom: 36px;
+    gap: var(--space-m);
   }
   .edu li {
-    padding-left: 14px;
+    position: relative;
+    display: grid;
+    gap: 2px;
+    padding-left: var(--space-s);
     border-left: 1px solid var(--line-strong);
   }
-  .edu li:first-child {
-    border-left-color: var(--accent);
+  .edu li.honor {
+    border-left-color: var(--volt-ink);
   }
   .edu-t {
     font-weight: 500;
+    color: var(--ink);
   }
   .edu-s {
-    margin-top: 2px;
-    font-size: 12px;
+    font-size: var(--step--2);
     color: var(--muted);
   }
   .edu-n {
-    margin-top: 4px;
-    font-size: 14px;
+    font-size: var(--step--1);
     color: var(--ink-2);
+  }
+  .tag--honor {
+    justify-self: start;
+    margin-top: 4px;
+    border-color: color-mix(in srgb, var(--volt-ink) 45%, transparent);
+    color: var(--volt-ink);
+    background: var(--volt-soft);
+    font-size: 10.5px;
   }
   .certs {
-    list-style: none;
-    display: grid;
-    gap: 6px;
-    font-size: 14px;
-    color: var(--ink-2);
+    align-content: start;
   }
-  @media (max-width: 860px) {
-    .grid {
-      grid-template-columns: 1fr;
+  .certs .chip {
+    white-space: normal;
+  }
+
+  @media (min-width: 768px) {
+    .fronts {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .sheet {
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
     }
   }
-  @media (max-width: 520px) {
-    .row {
-      grid-template-columns: 1fr;
-      gap: 8px;
+  @media (min-width: 1024px) {
+    .fronts {
+      grid-template-columns: minmax(0, 0.7fr) repeat(5, minmax(0, 1fr));
+    }
+    .f-d {
+      display: block;
+    }
+    .sk-main {
+      grid-template-columns: minmax(0, 8fr) minmax(0, 3.4fr);
+      align-items: start;
+    }
+    .where {
+      order: 0;
+      position: sticky;
+      top: calc(var(--header-h) + var(--space-l));
     }
   }
 </style>

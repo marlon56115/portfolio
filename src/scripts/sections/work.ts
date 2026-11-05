@@ -1,7 +1,12 @@
-// Experiencia. Dueño en la fase 2: pf-work.
-// Hoy la línea de tiempo no necesita JS (usa <details>); las duraciones dinámicas las
-// recalcula hydrateSince() de src/lib/time.ts. Este módulo queda listo para interacciones nuevas.
+// Experiencia y stack. Dueño en la fase 2: pf-work.
+// main.ts solo llama a initWork(); la matriz del stack (Skills.astro) también se inicia aquí
+// porque no tiene un init propio en main.ts.
+
+import { safe } from '../../lib/dom';
+import { initTrace } from '../work/trace';
+import { initSkills } from '../work/skills';
 
 export function initWork(): void {
-  /* intencionalmente vacío */
+  safe('work:trace', initTrace);
+  safe('work:skills', initSkills);
 }
