@@ -1,12 +1,13 @@
 image:
   repository: ghcr.io/marlon56115/portfolio
-  tag: "0.1.2" # lo fija el HelmRelease de home-server
+  tag: "0.1.2" # lo fija el repositorio de despliegue
   pullPolicy: IfNotPresent
 
 replicaCount: 1
 
-# Prometheus del clúster (kube-prometheus-stack). Vacío = panel en vivo desactivado.
-prometheusUrl: http://kps-prometheus.monitoring.svc.cluster.local:9090
+# URL de una API compatible con Prometheus para CPU y memoria agregadas. Se define en los valores
+# del despliegue, no aquí. Vacío = el panel muestra solo tiempo activo, páginas servidas y latencia.
+prometheusUrl: ""
 
 service:
   port: 80

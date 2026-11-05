@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"io/fs"
 	"log/slog"
 	"mime"
@@ -12,6 +13,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -45,6 +47,8 @@ type handler struct {
 	log       *slog.Logger
 	limiter   *limiter
 	apiLimit  *limiter
+	started   time.Time
+	pages     atomic.Uint64 // páginas HTML servidas desde que arrancó el proceso
 }
 
 func newHandler(site fs.FS, c *collector, log *slog.Logger) http.Handler {
@@ -54,6 +58,7 @@ func newHandler(site fs.FS, c *collector, log *slog.Logger) http.Handler {
 		log:       log,
 		limiter:   newLimiter(30, 120), // 30 peticiones/s por IP, ráfaga de 120 (una carga completa pide ~25 archivos)
 		apiLimit:  newLimiter(0.5, 10), // /api/status: 1 cada 2 s por IP, ráfaga de 10
+		started:   time.Now(),
 	}
 	// Todo el sitio se carga en memoria al arrancar (pesa unos pocos MB) con su ETag calculado una vez.
 	_ = fs.WalkDir(site, ".", func(p string, d fs.DirEntry, err error) error {
@@ -123,21 +128,34 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.serveStatic(sw, r)
 }
 
+// serveStatus nunca consulta nada: arma la respuesta con el reloj del proceso, el contador de
+// páginas y la última instantánea de métricas en memoria. Si las métricas no están disponibles,
+// esos campos simplemente se omiten y el resto sigue respondiendo.
 func (h *handler) serveStatus(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	body := h.collector.snapshot()
-	if body == nil {
+	body, err := json.Marshal(h.status(time.Now()))
+	if err != nil {
 		w.Header().Set("Cache-Control", "no-store")
 		w.WriteHeader(http.StatusServiceUnavailable)
 		_, _ = w.Write([]byte(`{"ok":false}`))
 		return
 	}
-	// Cloudflare y el navegador pueden reutilizarlo unos segundos: los datos cambian cada 15 s.
+	// El borde y el navegador pueden reutilizarlo unos segundos: los datos cambian cada 15 s.
 	w.Header().Set("Cache-Control", "public, max-age=10")
 	if r.Method == http.MethodHead {
 		return
 	}
 	_, _ = w.Write(body)
+}
+
+func (h *handler) status(now time.Time) status {
+	up := int64(now.Sub(h.started).Seconds()) / uptimeRoundTo * uptimeRoundTo
+	served := h.pages.Load()
+	s := status{OK: true, GeneratedAt: now.UTC().Format(time.RFC3339), UptimeSeconds: &up, RequestsServed: &served}
+	if m := h.collector.latest(); m != nil {
+		s.CPU, s.Memory, s.CPUHistory = m.CPU, m.Memory, m.CPUHistory
+	}
+	return s
 }
 
 // Idioma de la primera visita: cookie elegida por el visitante > país (Cloudflare) > navegador.
@@ -164,6 +182,7 @@ func (h *handler) serveStatic(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, clean+"/", http.StatusMovedPermanently)
 			return
 		}
+		h.countPage(r)
 		h.writeAsset(w, r, a, "no-cache")
 		return
 	}
@@ -183,8 +202,16 @@ func (h *handler) serveStatic(w http.ResponseWriter, r *http.Request) {
 		cache = "public, max-age=31536000, immutable" // nombres con hash del contenido
 	case strings.HasSuffix(key, ".html"):
 		cache = "no-cache"
+		h.countPage(r)
 	}
 	h.writeAsset(w, r, a, cache)
+}
+
+// countPage cuenta solo páginas HTML pedidas con GET (no recursos, healthz, la API ni el 404).
+func (h *handler) countPage(r *http.Request) {
+	if r.Method == http.MethodGet {
+		h.pages.Add(1)
+	}
 }
 
 func (h *handler) serve404(w http.ResponseWriter, r *http.Request) {
@@ -228,8 +255,8 @@ func setSecurityHeaders(h http.Header) {
 	h.Set("X-Permitted-Cross-Domain-Policies", "none")
 }
 
-// La IP real la pone Cloudflare en CF-Connecting-IP. Se puede confiar en ella porque el pod
-// solo acepta tráfico de cloudflared (NetworkPolicy) y no hay Ingress que la deje falsificar.
+// La IP del visitante llega del borde en CF-Connecting-IP. Solo es fiable si el servidor no es
+// alcanzable más que a través del borde; esa garantía es responsabilidad del despliegue.
 func clientIP(r *http.Request) string {
 	if v := strings.TrimSpace(r.Header.Get("CF-Connecting-IP")); v != "" {
 		if ip := net.ParseIP(v); ip != nil {

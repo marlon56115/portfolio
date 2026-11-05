@@ -19,7 +19,7 @@ func init() {
 	}
 }
 
-// limiter: un token bucket por IP, en memoria. Con una sola réplica basta; Cloudflare frena antes
+// limiter: un token bucket por IP, en memoria. Con una sola réplica basta; el borde frena antes
 // los abusos grandes. El mapa tiene tope de tamaño para que no se pueda usar para agotar memoria.
 type limiter struct {
 	mu      sync.Mutex

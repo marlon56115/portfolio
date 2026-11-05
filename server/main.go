@@ -2,10 +2,11 @@
 //   - sirve el sitio de Astro embebido (solo GET/HEAD, sin listados de directorio),
 //   - añade cabeceras de seguridad y una CSP estricta a todo,
 //   - redirige "/" al idioma (cookie > país de Cloudflare > Accept-Language),
-//   - expone /api/status con agregados de Prometheus que se refrescan en segundo plano.
+//   - expone /api/status: tiempo activo del proceso, páginas servidas y, si hay fuente de
+//     métricas, CPU y memoria agregadas que se refrescan en segundo plano.
 //
-// Ninguna petición de un visitante llega a Prometheus: el handler solo lee la última
-// instantánea en memoria. Así el tráfico público no puede amplificarse hacia el clúster.
+// Ninguna petición de un visitante dispara una consulta de métricas: el handler solo lee la
+// última instantánea en memoria. Así el tráfico público no puede amplificarse hacia dentro.
 package main
 
 import (
@@ -79,7 +80,7 @@ type config struct {
 func loadConfig() config {
 	c := config{
 		addr:          envOr("LISTEN_ADDR", ":8080"),
-		prometheusURL: os.Getenv("PROMETHEUS_URL"), // vacío = panel desactivado
+		prometheusURL: os.Getenv("PROMETHEUS_URL"), // vacío = sin CPU/memoria (el resto del panel sigue)
 		refresh:       15 * time.Second,
 	}
 	if v := os.Getenv("REFRESH_INTERVAL"); v != "" {

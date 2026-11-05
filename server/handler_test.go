@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
@@ -11,9 +12,8 @@ import (
 	"time"
 )
 
-func testHandler(t *testing.T) http.Handler {
-	t.Helper()
-	site := fstest.MapFS{
+func testSite() fstest.MapFS {
+	return fstest.MapFS{
 		"es/index.html":            {Data: []byte("<html>es</html>")},
 		"en/index.html":            {Data: []byte("<html>en</html>")},
 		"404.html":                 {Data: []byte("<html>404</html>")},
@@ -23,8 +23,12 @@ func testHandler(t *testing.T) http.Handler {
 		".well-known/security.txt": {Data: []byte("Contact: mailto:x")},
 		".env":                     {Data: []byte("secret")},
 	}
+}
+
+func testHandler(t *testing.T) http.Handler {
+	t.Helper()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	return newHandler(site, newCollector("", time.Second, log), log)
+	return newHandler(testSite(), newCollector("", time.Second, log), log)
 }
 
 func do(h http.Handler, method, target string, hdr map[string]string) *httptest.ResponseRecorder {
@@ -133,11 +137,42 @@ func TestMethods(t *testing.T) {
 	}
 }
 
-func TestStatusUnavailableWithoutPrometheus(t *testing.T) {
+func TestStatusWithoutMetrics(t *testing.T) {
 	h := testHandler(t)
 	w := do(h, "GET", "/api/status", nil)
-	if w.Code != http.StatusServiceUnavailable || w.Body.String() != `{"ok":false}` {
+	if w.Code != 200 {
 		t.Fatalf("%d %q", w.Code, w.Body.String())
+	}
+	var raw map[string]any
+	if err := json.Unmarshal(w.Body.Bytes(), &raw); err != nil {
+		t.Fatal(err)
+	}
+	if raw["ok"] != true || raw["uptimeSeconds"] == nil || raw["requestsServed"] == nil || raw["generatedAt"] == nil {
+		t.Fatalf("missing base fields: %s", w.Body.String())
+	}
+	for _, k := range []string{"cpu", "memory", "cpuHistory"} {
+		if _, ok := raw[k]; ok {
+			t.Fatalf("%s must be omitted without a metrics source: %s", k, w.Body.String())
+		}
+	}
+}
+
+func TestUptimeRounded(t *testing.T) {
+	h := testHandler(t).(*handler)
+	s := h.status(h.started.Add(179 * time.Second))
+	if *s.UptimeSeconds != 120 {
+		t.Fatalf("uptime %d, want 120", *s.UptimeSeconds)
+	}
+}
+
+func TestRequestsServedCountsPagesOnly(t *testing.T) {
+	h := testHandler(t).(*handler)
+	for _, p := range []string{"/es/", "/en/", "/es/", "/_astro/app.abc.js", "/healthz", "/api/status", "/nope", "/", "/es", "/theme-init.js"} {
+		do(h, "GET", p, map[string]string{"CF-Connecting-IP": "198.51.100.9"})
+	}
+	do(h, "HEAD", "/es/", nil)
+	if got := h.pages.Load(); got != 3 {
+		t.Fatalf("requestsServed %d, want 3", got)
 	}
 }
 
