@@ -40,9 +40,10 @@ function setup(g: HTMLElement): void {
     if (caption) caption.textContent = links[i].dataset.caption ?? '';
   };
 
-  const go = (i: number) => {
+  // `instant`: la galería está detrás del lightbox; se sincroniza sin animar para que el foco vuelva bien.
+  const go = (i: number, instant = false) => {
     const k = Math.max(0, Math.min(n - 1, i));
-    track.scrollTo({ left: k * track.clientWidth, behavior: reducedMotion.matches ? 'auto' : 'smooth' });
+    track.scrollTo({ left: k * track.clientWidth, behavior: instant || reducedMotion.matches ? 'auto' : 'smooth' });
     mark(k);
   };
 
@@ -75,7 +76,7 @@ function setup(g: HTMLElement): void {
     a.addEventListener('click', (e) => {
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; // nueva pestaña: comportamiento normal
       e.preventDefault();
-      openLightbox(items(), i, () => links[current], (k) => go(k));
+      openLightbox(items(), i, () => links[current], (k) => go(k, true));
     }),
   );
 

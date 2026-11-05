@@ -17,7 +17,11 @@ let index = 0;
 let opener: (() => HTMLElement | undefined) | null = null;
 let onMove: ((i: number) => void) | null = null;
 
-const isLight = () => document.documentElement.dataset.theme === 'light';
+// Tema efectivo: el elegido a mano o, si no hay, el del sistema (igual que tokens.css).
+const isLight = () => {
+  const t = document.documentElement.dataset.theme;
+  return t ? t === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
+};
 
 function show(i: number): void {
   if (!dialog) return;

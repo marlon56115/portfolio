@@ -94,6 +94,11 @@ const pad = (v: string, n: number) => v.padEnd(n, ' ');
     inset: 1px;
     background: var(--term-bg);
   }
+  /* La entrada no dibuja su propio anillo (es parte de la línea); lo lleva la ventana entera. */
+  .term:has(.term__in:focus-visible) {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+  }
   .term:focus-within::before {
     background: linear-gradient(160deg, var(--volt), color-mix(in srgb, var(--ion) 50%, transparent) 45%, rgb(214 224 232 / 0.2));
   }
