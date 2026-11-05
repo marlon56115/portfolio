@@ -10,49 +10,49 @@ import (
 	"math"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strconv"
 	"sync/atomic"
 	"time"
 )
 
-// Consultas fijas: el visitante no puede elegir ni modificar ninguna. Solo agregados del nodo;
-// ningún nombre de pod, namespace, IP o etiqueta interna sale de aquí.
-var instantQueries = map[string]string{
-	"uptimeSeconds":    `max(time() - node_boot_time_seconds)`,
-	"cpu":              `1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m]))`,
-	"memory":           `max(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)`,
-	"memoryTotalBytes": `max(node_memory_MemTotal_bytes)`,
-	"pods":             `count(kube_pod_status_phase{phase="Running"} == 1)`,
-	"namespaces":       `count(kube_namespace_created)`,
-	"cpuTempC":         `max(node_hwmon_temp_celsius{chip=~"pci0000:00_0000:00:18_3"})`,
-	"netRxBps":         `sum(rate(node_network_receive_bytes_total{device!~"lo|veth.*|cni.*|flannel.*|tailscale.*"}[5m]))`,
-	"netTxBps":         `sum(rate(node_network_transmit_bytes_total{device!~"lo|veth.*|cni.*|flannel.*|tailscale.*"}[5m]))`,
-	"diskData":         `max(1 - node_filesystem_avail_bytes{mountpoint="/srv/data"} / node_filesystem_size_bytes{mountpoint="/srv/data"})`,
-}
-
+// Consultas fijas: el visitante no puede elegir ni modificar ninguna. Solo dos agregados
+// (porcentaje de CPU y de memoria) y la serie de CPU de la última hora. Ninguna etiqueta,
+// nombre ni dirección sale de aquí: solo se leen números.
 const (
+	cpuQuery      = `1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m]))`
+	memoryQuery   = `max(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)`
 	cpuRangeQuery = `1 - avg(rate(node_cpu_seconds_total{mode="idle"}[2m]))`
-	infoQuery     = `kube_node_info`
+
+	historySpan   = time.Hour
+	historyStep   = time.Minute
+	maxHistory    = 60      // puntos como máximo en cpuHistory
 	maxBody       = 1 << 20 // 1 MiB por respuesta de Prometheus
+	staleAfter    = 2 * time.Minute
+	uptimeRoundTo = 60 // segundos
 )
 
+// metrics es la parte que viene de Prometheus. Se refresca en segundo plano.
+type metrics struct {
+	CPU        *float64  `json:"cpu,omitempty"`
+	Memory     *float64  `json:"memory,omitempty"`
+	CPUHistory []float64 `json:"cpuHistory,omitempty"`
+}
+
+// status es el contrato público de /api/status. Cualquier campo nuevo aquí es público:
+// solo agregados, nunca datos que describan la infraestructura.
 type status struct {
-	OK               bool      `json:"ok"`
-	GeneratedAt      string    `json:"generatedAt"`
-	UptimeSeconds    *float64  `json:"uptimeSeconds,omitempty"`
-	CPU              *float64  `json:"cpu,omitempty"`
-	Memory           *float64  `json:"memory,omitempty"`
-	MemoryTotalBytes *float64  `json:"memoryTotalBytes,omitempty"`
-	Pods             *float64  `json:"pods,omitempty"`
-	Namespaces       *float64  `json:"namespaces,omitempty"`
-	CPUTempC         *float64  `json:"cpuTempC,omitempty"`
-	NetRxBps         *float64  `json:"netRxBps,omitempty"`
-	NetTxBps         *float64  `json:"netTxBps,omitempty"`
-	DiskData         *float64  `json:"diskData,omitempty"`
-	K8s              string    `json:"k8s,omitempty"`
-	OS               string    `json:"os,omitempty"`
-	CPUHistory       []float64 `json:"cpuHistory,omitempty"`
+	OK             bool      `json:"ok"`
+	GeneratedAt    string    `json:"generatedAt"`
+	UptimeSeconds  *int64    `json:"uptimeSeconds,omitempty"`
+	RequestsServed *uint64   `json:"requestsServed,omitempty"`
+	CPU            *float64  `json:"cpu,omitempty"`
+	Memory         *float64  `json:"memory,omitempty"`
+	CPUHistory     []float64 `json:"cpuHistory,omitempty"`
+}
+
+type snapshot struct {
+	m  metrics
+	at time.Time
 }
 
 type collector struct {
@@ -60,8 +60,7 @@ type collector struct {
 	interval time.Duration
 	client   *http.Client
 	log      *slog.Logger
-	current  atomic.Pointer[[]byte]
-	fetched  atomic.Int64 // unix del último éxito
+	current  atomic.Pointer[snapshot]
 }
 
 func newCollector(base string, interval time.Duration, log *slog.Logger) *collector {
@@ -77,18 +76,18 @@ func newCollector(base string, interval time.Duration, log *slog.Logger) *collec
 	}
 }
 
-// snapshot devuelve el último JSON. Si lleva más de 2 minutos sin refrescar, se considera caído.
-func (c *collector) snapshot() []byte {
-	p := c.current.Load()
-	if p == nil || time.Since(time.Unix(c.fetched.Load(), 0)) > 2*time.Minute {
+// latest devuelve las últimas métricas, o nil si no hay o llevan demasiado sin refrescar.
+func (c *collector) latest() *metrics {
+	s := c.current.Load()
+	if s == nil || time.Since(s.at) > staleAfter {
 		return nil
 	}
-	return *p
+	return &s.m
 }
 
 func (c *collector) run(ctx context.Context) {
 	if c.base == "" {
-		c.log.Info("PROMETHEUS_URL not set: live status disabled")
+		c.log.Info("PROMETHEUS_URL not set: cpu/memory metrics disabled")
 		return
 	}
 	t := time.NewTicker(c.interval)
@@ -107,50 +106,37 @@ func (c *collector) refresh(ctx context.Context) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	s := status{OK: true, GeneratedAt: time.Now().UTC().Format(time.RFC3339)}
-	fields := map[string]**float64{
-		"uptimeSeconds": &s.UptimeSeconds, "cpu": &s.CPU, "memory": &s.Memory, "memoryTotalBytes": &s.MemoryTotalBytes,
-		"pods": &s.Pods, "namespaces": &s.Namespaces, "cpuTempC": &s.CPUTempC, "netRxBps": &s.NetRxBps,
-		"netTxBps": &s.NetTxBps, "diskData": &s.DiskData,
-	}
-	okCount := 0
-	for k, q := range instantQueries {
-		v, err := c.scalar(ctx, q)
+	var m metrics
+	ok := 0
+	for _, f := range []struct {
+		q   string
+		dst **float64
+	}{{cpuQuery, &m.CPU}, {memoryQuery, &m.Memory}} {
+		v, err := c.scalar(ctx, f.q)
 		if err != nil {
-			c.log.Debug("query failed", "key", k, "err", err)
+			c.log.Debug("query failed", "err", err)
 			continue
 		}
-		v = round(v, 4)
-		*fields[k] = &v
-		okCount++
+		v = round(clamp01(v), 4)
+		*f.dst = &v
+		ok++
 	}
-	if okCount == 0 {
-		c.log.Warn("prometheus unreachable")
+	if ok == 0 {
+		c.log.Warn("metrics source unreachable")
 		return
 	}
-	if hist, err := c.rangeQuery(ctx, cpuRangeQuery, time.Hour, 2*time.Minute); err == nil {
-		s.CPUHistory = hist
+	if hist, err := c.rangeQuery(ctx, cpuRangeQuery, historySpan, historyStep); err == nil {
+		m.CPUHistory = hist
 	}
-	if k8s, osImage, err := c.nodeInfo(ctx); err == nil {
-		s.K8s, s.OS = k8s, osImage
-	}
-
-	b, err := json.Marshal(s)
-	if err != nil {
-		return
-	}
-	c.current.Store(&b)
-	c.fetched.Store(time.Now().Unix())
+	c.current.Store(&snapshot{m: m, at: time.Now()})
 }
 
 type promResp struct {
 	Status string `json:"status"`
 	Data   struct {
-		ResultType string `json:"resultType"`
-		Result     []struct {
-			Metric map[string]string `json:"metric"`
-			Value  []any             `json:"value"`
-			Values [][]any           `json:"values"`
+		Result []struct {
+			Value  []any   `json:"value"`
+			Values [][]any `json:"values"`
 		} `json:"result"`
 	} `json:"data"`
 }
@@ -167,14 +153,14 @@ func (c *collector) get(ctx context.Context, endpoint string, params url.Values)
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("prometheus status %d", res.StatusCode)
+		return nil, fmt.Errorf("metrics status %d", res.StatusCode)
 	}
 	var pr promResp
 	if err := json.NewDecoder(io.LimitReader(res.Body, maxBody)).Decode(&pr); err != nil {
 		return nil, err
 	}
 	if pr.Status != "success" {
-		return nil, errors.New("prometheus error")
+		return nil, errors.New("metrics error")
 	}
 	return &pr, nil
 }
@@ -211,38 +197,16 @@ func (c *collector) rangeQuery(ctx context.Context, q string, span, step time.Du
 			continue
 		}
 		if v, err := parseSample(pair[1]); err == nil {
-			out = append(out, round(v, 4))
+			out = append(out, round(clamp01(v), 4))
 		}
 	}
-	if len(out) > 120 {
-		out = out[len(out)-120:]
+	if len(out) > maxHistory {
+		out = out[len(out)-maxHistory:]
+	}
+	if len(out) == 0 {
+		return nil, errors.New("empty result")
 	}
 	return out, nil
-}
-
-var (
-	reK8s = regexp.MustCompile(`^v(\d+)\.(\d+)`)
-	reOS  = regexp.MustCompile(`^([A-Za-z]+) (\d+\.\d+)`)
-)
-
-// nodeInfo publica solo versión mayor.menor de k3s y del SO (sin kernel ni parches).
-func (c *collector) nodeInfo(ctx context.Context) (string, string, error) {
-	pr, err := c.get(ctx, "/api/v1/query", url.Values{"query": {infoQuery}})
-	if err != nil {
-		return "", "", err
-	}
-	if len(pr.Data.Result) == 0 {
-		return "", "", errors.New("empty result")
-	}
-	m := pr.Data.Result[0].Metric
-	k8s, osImage := "", ""
-	if g := reK8s.FindStringSubmatch(m["kubelet_version"]); g != nil {
-		k8s = "v" + g[1] + "." + g[2]
-	}
-	if g := reOS.FindStringSubmatch(m["os_image"]); g != nil {
-		osImage = g[1] + " " + g[2]
-	}
-	return k8s, osImage, nil
 }
 
 func parseSample(v any) (float64, error) {
@@ -256,6 +220,8 @@ func parseSample(v any) (float64, error) {
 	}
 	return f, nil
 }
+
+func clamp01(v float64) float64 { return math.Max(0, math.Min(1, v)) }
 
 func round(v float64, places int) float64 {
 	p := math.Pow(10, float64(places))

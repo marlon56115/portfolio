@@ -1,4 +1,10 @@
 ---
+// Sección 04 "autoalojado". Dueño: pf-system.
+// Panel en vivo (/api/status) + dos flujos interactivos (camino de una petición y cómo sale una
+// versión) + caja de herramientas. Todo genérico a propósito (DESIGN.md §7): etapas abstractas,
+// sin nombres internos, versiones ni detalles de red.
+// Comportamiento en src/scripts/sections/system.ts. Sin JS: cifras en "—" con una nota, y todas las
+// descripciones de las etapas visibles como lista.
 import type { Lang } from '../i18n';
 import { dict } from '../i18n';
 import { sectionIndex } from '../lib/sections';
@@ -8,488 +14,715 @@ interface Props {
   lang: Lang;
 }
 const { lang } = Astro.props;
-const t = dict[lang];
-const s = t.system;
-const a = t.arch;
+const s = dict[lang].system;
+const L = s.live;
+const n2 = (i: number) => String(i + 1).padStart(2, '0');
 
-type Node = { id: keyof typeof a; meta: string };
-const zones: { label: string; nodes: Node[] }[] = [
-  { label: 'internet', nodes: [{ id: 'visitor', meta: 'HTTPS' }] },
-  {
-    label: 'cloudflare',
-    nodes: [
-      { id: 'edge', meta: 'TLS · cache · WAF' },
-      { id: 'tunnel', meta: 'outbound only' },
-    ],
-  },
-  {
-    label: 'homelab · k3s',
-    nodes: [
-      { id: 'cloudflared', meta: 'ns/cloudflared' },
-      { id: 'pod', meta: 'go · distroless' },
-      { id: 'prometheus', meta: 'ns/monitoring' },
-    ],
-  },
-];
-const delivery: Node[] = [
-  { id: 'github', meta: 'git tag v*' },
-  { id: 'ghcr', meta: 'image:X.Y.Z' },
-  { id: 'flux', meta: 'pull · 1m' },
-];
+const flows = [
+  { key: 'path', data: s.path, initial: 'service' },
+  { key: 'ship', data: s.ship, initial: 'ci' },
+] as const;
 ---
 
-<section class="section" id="system">
+<section class="section sys" id="system" aria-labelledby="system-title">
   <div class="wrap">
-    <SectionHead index={sectionIndex('system')} label={s.label} title={s.title} lead={s.lead} />
+    <SectionHead index={sectionIndex('system')} label={s.label} title={s.title} lead={s.lead} id="system-title" />
 
-    <div class="panel" data-status-panel data-reveal aria-live="polite">
-      <div class="panel-bar mono">
-        <span class="panel-host"><span class="led is-off" data-status-led></span> homelab</span>
-        <span class="panel-meta" data-status-meta>{s.loading}</span>
-      </div>
+    <div class="sys-grid">
+      <!-- ---------- panel en vivo ---------- -->
+      <div class="live-col">
+        <div class="panel panel--raised live" data-status-panel data-state="connecting" data-reveal>
+          <div class="panel__bar">
+            <span class="led is-off" data-status-led></span>
+            <span class="panel__title">{L.title}</span>
+            <span class="live-state" data-status-state role="status">{L.connecting}</span>
+          </div>
 
-      <div class="tiles">
-        <div class="tile">
-          <p class="k mono">{s.uptime}</p>
-          <p class="v" data-metric="uptime">—</p>
-        </div>
-        <div class="tile">
-          <p class="k mono">{s.cpu}</p>
-          <p class="v" data-metric="cpu">—</p>
-          <span class="bar"><span data-bar="cpu"></span></span>
-        </div>
-        <div class="tile">
-          <p class="k mono">{s.memory}</p>
-          <p class="v" data-metric="mem">—</p>
-          <span class="bar"><span data-bar="mem"></span></span>
-        </div>
-        <div class="tile">
-          <p class="k mono">{s.pods}</p>
-          <p class="v" data-metric="pods">—</p>
-          <p class="sub mono" data-metric="namespaces"></p>
-        </div>
-        <div class="tile">
-          <p class="k mono">{s.temp}</p>
-          <p class="v" data-metric="temp">—</p>
-        </div>
-        <div class="tile">
-          <p class="k mono">{s.network}</p>
-          <p class="v v-sm" data-metric="net">—</p>
-        </div>
-        <div class="tile">
-          <p class="k mono">{s.disk}</p>
-          <p class="v" data-metric="disk">—</p>
-          <span class="bar"><span data-bar="disk"></span></span>
-        </div>
-        <div class="tile tile-spark">
-          <p class="k mono">{s.cpuHistory}</p>
-          <svg class="spark" viewBox="0 0 240 56" preserveAspectRatio="none" aria-hidden="true" data-spark>
-            <path class="spark-area" d=""></path>
-            <path class="spark-line" d=""></path>
-          </svg>
-        </div>
-      </div>
-
-      <p class="panel-foot mono">
-        <span data-status-source>{s.source}</span>
-        <span class="panel-sys" data-metric="sys"></span>
-      </p>
-    </div>
-
-    <div class="arch" data-arch data-reveal>
-      <div class="arch-head">
-        <h3>{s.archTitle}</h3>
-        <p>{s.archLead}</p>
-      </div>
-
-      <div class="lane" role="list">
-        {
-          zones.map((z) => (
-            <div class="zone" role="listitem">
-              <span class="zone-label mono">{z.label}</span>
-              <div class="zone-nodes">
-                {z.nodes.map((n) => (
-                  <button
-                    class="node"
-                    type="button"
-                    data-node={n.id}
-                    aria-pressed={n.id === 'pod' ? 'true' : 'false'}
-                    aria-controls="arch-detail"
-                  >
-                    <span class="node-t">{a[n.id].t}</span>
-                    <span class="node-m mono">{n.meta}</span>
-                  </button>
-                ))}
+          <div class="live-grid">
+            <div class="metric metric--cpu" data-tile="cpu">
+              <div class="metric-head">
+                <p class="metric-k">{L.cpu}</p>
+                <p class="metric-v"><span data-metric="cpu">—</span><small aria-hidden="true">%</small></p>
+                <p class="metric-n" data-note="cpu" data-note-on={L.cpuNote} data-note-idle={L.idleNote}>{L.cpuNote}</p>
+              </div>
+              <div class="spark" aria-hidden="true">
+                <svg viewBox="0 0 240 64" preserveAspectRatio="none" data-spark>
+                  <line class="spark-grid" x1="0" y1="16" x2="240" y2="16"></line>
+                  <line class="spark-grid" x1="0" y1="32" x2="240" y2="32"></line>
+                  <line class="spark-grid" x1="0" y1="48" x2="240" y2="48"></line>
+                  <line class="spark-flat" x1="0" y1="62" x2="240" y2="62"></line>
+                  <path class="spark-area" d=""></path>
+                  <path class="spark-line" d=""></path>
+                </svg>
+                <span class="spark-scan"></span>
               </div>
             </div>
-          ))
-        }
-      </div>
 
-      <div class="lane lane-deploy">
-        <span class="zone-label mono">{s.deployTitle}</span>
-        <div class="zone-nodes">
-          {
-            delivery.map((n) => (
-              <button class="node node-quiet" type="button" data-node={n.id} aria-pressed="false" aria-controls="arch-detail">
-                <span class="node-t">{a[n.id].t}</span>
-                <span class="node-m mono">{n.meta}</span>
-              </button>
-            ))
-          }
-          <span class="node-end mono" aria-hidden="true">→ portfolio</span>
+            <div class="metric" data-tile="memory">
+              <p class="metric-k">{L.memory}</p>
+              <p class="metric-v"><span data-metric="memory">—</span><small aria-hidden="true">%</small></p>
+              <span class="gauge" aria-hidden="true"><span data-gauge="memory"></span></span>
+              <p class="metric-n" data-note="memory" data-note-on={L.memoryNote} data-note-idle={L.idleNote}>{L.memoryNote}</p>
+            </div>
+
+            <div class="metric" data-tile="latency">
+              <p class="metric-k">{L.latency}</p>
+              <p class="metric-v"><span data-metric="latency">—</span><small aria-hidden="true">ms</small></p>
+              <p class="metric-n">{L.latencyNote}</p>
+            </div>
+
+            <div class="metric" data-tile="uptime">
+              <p class="metric-k">{L.uptime}</p>
+              <p class="metric-v"><span data-metric="uptime">—</span></p>
+              <p class="metric-n">{L.uptimeNote}</p>
+            </div>
+
+            <div class="metric" data-tile="requests">
+              <p class="metric-k">{L.requests}</p>
+              <p class="metric-v"><span data-metric="requests">—</span></p>
+              <p class="metric-n">{L.requestsNote}</p>
+            </div>
+          </div>
+
+          <p class="live-foot">
+            <span>{L.foot}</span>
+            <span class="live-time" data-status-time></span>
+          </p>
+          <p class="live-nojs">{L.noscript}</p>
         </div>
       </div>
 
-      <div class="detail" id="arch-detail" aria-live="polite">
+      <!-- ---------- flujos ---------- -->
+      <div class="flows">
         {
-          Object.entries(a).map(([id, v]) => (
-            <div class="detail-item" data-detail={id} hidden={id !== 'pod'}>
-              <p class="detail-t mono">
-                <span>$</span> describe {id}
-              </p>
-              <p class="detail-d">{v.d}</p>
-            </div>
+          flows.map((f) => (
+            <figure class={`flow flow--${f.key}`} data-flow={f.key} data-reveal aria-labelledby={`flow-${f.key}-t`}>
+              <figcaption class="flow-head">
+                <h3 class="flow-t" id={`flow-${f.key}-t`}>
+                  <span class="flow-i" aria-hidden="true">
+                    {f.key === 'path' ? 'A' : 'B'}
+                  </span>
+                  {f.data.title}
+                </h3>
+                <p class="flow-lead" data-js-only>
+                  {f.data.lead}
+                </p>
+              </figcaption>
+
+              <div class={`stages stages--${f.data.stages.length}`}>
+                {f.data.stages.map((st, i) => (
+                  <>
+                    {i > 0 && (
+                      <span class="wire" aria-hidden="true">
+                        <i />
+                      </span>
+                    )}
+                    <button
+                      class="stage"
+                      type="button"
+                      data-stage={st.id}
+                      aria-pressed={st.id === f.initial ? 'true' : 'false'}
+                      aria-controls={`flow-${f.key}-detail`}
+                    >
+                      <span class="stage-n" aria-hidden="true">
+                        {n2(i)}
+                      </span>
+                      <span class="stage-t">{st.t}</span>
+                      <span class="stage-m">{st.meta}</span>
+                      <span class="stage-led" aria-hidden="true" />
+                      <span class="stage-ping" aria-hidden="true" />
+                    </button>
+                  </>
+                ))}
+              </div>
+
+              {f.key === 'path' && (
+                <p class="ping" data-ping data-js-only>
+                  <span class="led led--ion is-off" data-ping-led />
+                  <span>{s.path.ping}</span>
+                  <b data-ping-ms>—</b>
+                </p>
+              )}
+
+              <div class="readout" id={`flow-${f.key}-detail`} aria-live="polite">
+                {f.data.stages.map((st, i) => (
+                  <div class:list={['readout-item', { 'is-on': st.id === f.initial }]} data-detail={st.id}>
+                    <p class="readout-k">
+                      <span aria-hidden="true">{n2(i)}</span> {st.t}
+                    </p>
+                    <p class="readout-d">{st.d}</p>
+                  </div>
+                ))}
+              </div>
+            </figure>
           ))
         }
       </div>
+    </div>
+
+    <!-- ---------- caja de herramientas ---------- -->
+    <div class="toolbox" data-reveal>
+      <p class="label">{s.toolbox.title}</p>
+      <ul class="chip-list">
+        {s.toolbox.items.map((t, i) => <li class:list={['chip', { 'chip--volt': i < 3 }]}>{t}</li>)}
+      </ul>
     </div>
   </div>
 </section>
 
 <style>
-  /* ---------- panel ---------- */
-  .panel {
-    border: 1px solid var(--line);
-    background: var(--surface);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-  }
-  .panel-bar,
-  .panel-foot {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 10px 16px;
-    font-size: 12px;
-    color: var(--muted);
-  }
-  .panel-bar {
-    border-bottom: 1px solid var(--line);
-  }
-  .panel-foot {
-    border-top: 1px solid var(--line);
-    flex-wrap: wrap;
-  }
-  .panel-host {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--ink);
-  }
-  .tiles {
+  /* =================== maquetación =================== */
+  .sys-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-l);
+    margin-top: var(--space-xl);
   }
-  .tile {
-    position: relative;
-    padding: 18px 16px 20px;
-    border-right: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
-    min-height: 112px;
-  }
-  .tile:nth-child(4n) {
-    border-right: 0;
-  }
-  .tile:nth-last-child(-n + 4) {
-    border-bottom: 0;
-  }
-  .k {
-    font-size: 11px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-  .v {
-    margin-top: 10px;
-    font: 500 28px/1.1 var(--font-mono);
-    letter-spacing: -0.03em;
-    font-variant-numeric: tabular-nums;
-  }
-  .v-sm {
-    font-size: 20px;
-    line-height: 1.4;
-  }
-  .sub {
-    margin-top: 6px;
-    font-size: 12px;
-    color: var(--muted);
-  }
-  .bar {
-    position: absolute;
-    left: 16px;
-    right: 16px;
-    bottom: 14px;
-    height: 3px;
-    background: var(--surface-2);
-    overflow: hidden;
-  }
-  .bar span {
-    display: block;
-    height: 100%;
-    width: 0;
-    background: var(--accent);
-    transition: width 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
-  }
-  .spark {
-    display: block;
-    width: 100%;
-    height: 56px;
-    margin-top: 12px;
-  }
-  .spark-line {
-    fill: none;
-    stroke: var(--accent);
-    stroke-width: 1.5;
-    vector-effect: non-scaling-stroke;
-  }
-  .spark-area {
-    fill: var(--accent-soft);
-  }
-  .panel[data-state='offline'] .v {
-    color: var(--muted);
-  }
-  @media (max-width: 860px) {
-    .tiles {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+  @media (min-width: 1024px) {
+    .sys-grid {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      gap: var(--space-xl);
+      align-items: start;
     }
-    .tile:nth-child(4n) {
-      border-right: 1px solid var(--line);
-    }
-    .tile:nth-child(2n) {
-      border-right: 0;
-    }
-    .tile:nth-last-child(-n + 4) {
-      border-bottom: 1px solid var(--line);
-    }
-    .tile:nth-last-child(-n + 2) {
-      border-bottom: 0;
-    }
-    .v {
-      font-size: 24px;
+    .live {
+      position: sticky;
+      top: calc(var(--header-h) + var(--space-m));
     }
   }
 
-  /* ---------- arquitectura ---------- */
-  .arch {
-    margin-top: clamp(40px, 6vw, 72px);
-  }
-  .arch-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 8px 24px;
-    margin-bottom: 20px;
-  }
-  .arch-head h3 {
-    font-size: 20px;
-  }
-  .arch-head p {
+  /* =================== panel en vivo =================== */
+  .live-state {
+    flex: none;
+    font-family: var(--font-mono);
+    font-size: var(--step--2);
+    letter-spacing: 0;
+    text-transform: none;
     color: var(--muted);
-    font-size: 14px;
   }
-  .lane {
-    display: flex;
-    gap: 12px;
+  .live[data-state='online'] .live-state {
+    color: var(--ok);
   }
-  .zone {
-    flex: var(--n, 1);
+  .live[data-state='offline'] .live-state {
+    color: var(--warn);
+  }
+  .live-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .metric {
     position: relative;
-    padding: 28px 12px 12px;
-    border: 1px dashed var(--line-strong);
-    border-radius: var(--radius);
-  }
-  .zone:nth-child(1) {
-    --n: 1;
-  }
-  .zone:nth-child(2) {
-    --n: 2;
-  }
-  .zone:nth-child(3) {
-    --n: 3;
-    border-style: solid;
-    border-color: var(--line-strong);
-    background: color-mix(in srgb, var(--accent) 3%, transparent);
-  }
-  .zone-label {
-    position: absolute;
-    top: 8px;
-    left: 12px;
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 0.04em;
-  }
-  .zone-nodes {
-    display: flex;
-    gap: 22px;
-    height: 100%;
-  }
-  .node {
-    position: relative;
-    flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    padding: 12px;
+    gap: var(--space-3xs);
     min-width: 0;
-    text-align: left;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: var(--surface);
-    cursor: pointer;
-    transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+    padding: var(--space-s);
+    border-bottom: 1px solid var(--line);
   }
-  .node:hover {
-    border-color: var(--line-strong);
-    transform: translateY(-1px);
+  /* CPU ocupa la fila entera; las otras cuatro van de dos en dos. */
+  .metric--cpu {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-xs);
   }
-  .node[aria-pressed='true'] {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-soft);
+  .metric:nth-child(odd):not(.metric--cpu) {
+    border-left: 1px solid var(--line);
   }
-  .node-t {
-    font-weight: 500;
-    font-size: 14px;
-    overflow-wrap: anywhere;
+  .metric:nth-child(even) {
+    border-left: 0;
   }
-  .node-m {
-    font-size: 11px;
+  .metric:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+  .metric-k {
+    font-family: var(--font-display);
+    font-size: var(--step--2);
+    font-stretch: 87.5%;
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
     color: var(--muted);
   }
-  /* Conector entre nodos, con un "paquete" que viaja. */
-  .zone-nodes > .node:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    right: -23px;
-    width: 22px;
-    height: 1px;
-    background: var(--line-strong);
+  .metric-v {
+    display: flex;
+    align-items: baseline;
+    gap: 0.2em;
+    font-family: var(--font-mono);
+    font-size: clamp(26px, 6.4vw, 34px);
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    transition: color var(--dur-2) var(--ease-out), opacity var(--dur-2) var(--ease-out);
   }
-  .zone:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    top: calc(50% + 8px);
-    right: -13px;
-    width: 12px;
-    height: 1px;
-    background: var(--line-strong);
+  .metric-v small {
+    font-size: 0.5em;
+    letter-spacing: 0;
+    color: var(--muted);
   }
-  .js .zone-nodes > .node:not(:last-child)::before,
-  .js .zone:not(:last-child)::before {
+  .metric-n {
+    font-family: var(--font-mono);
+    font-size: var(--step--2);
+    color: var(--muted);
+  }
+  .metric[data-idle] .metric-v {
+    color: var(--muted);
+  }
+  .live[data-state='offline'] .metric-v,
+  .live[data-state='connecting'] .metric-v {
+    opacity: 0.55;
+  }
+
+  /* sparkline */
+  .spark {
+    position: relative;
+    height: 64px;
+    overflow: hidden;
+  }
+  .spark svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .spark-grid {
+    stroke: var(--line);
+    stroke-width: 1;
+    stroke-dasharray: 2 4;
+    vector-effect: non-scaling-stroke;
+  }
+  .spark-flat {
+    stroke: var(--line-strong);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+  .spark-line {
+    fill: none;
+    stroke: var(--ion);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+  .spark-area {
+    fill: var(--ion-soft);
+  }
+  /* Sin datos de carga: una línea plana y un barrido, como un osciloscopio esperando señal. */
+  .spark-scan {
+    position: absolute;
+    inset: 0;
+    display: none;
+    background: linear-gradient(90deg, transparent 0 82%, var(--ion-soft) 96%, var(--ion) 99.5%, transparent 100%);
+    opacity: 0.7;
+  }
+  .metric[data-idle] .spark-scan {
+    display: block;
+    animation: scan 3.2s linear infinite;
+  }
+  .metric[data-idle] .spark-area,
+  .metric[data-idle] .spark-line {
+    display: none;
+  }
+  @keyframes scan {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(100%);
+    }
+  }
+
+  /* barra segmentada de memoria */
+  .gauge {
+    position: relative;
+    display: block;
+    height: 8px;
+    margin: var(--space-3xs) 0 2px;
+    background: var(--surface-3);
+    overflow: hidden;
+  }
+  .gauge span {
+    position: absolute;
+    inset: 0;
+    background: var(--ion);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--dur-4) var(--ease-out);
+  }
+  .gauge::after {
     content: '';
     position: absolute;
-    top: calc(50% - 2px);
-    right: -23px;
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--accent);
+    inset: 0;
+    background: repeating-linear-gradient(90deg, transparent 0 calc(5% - 2px), var(--surface-2) calc(5% - 2px) 5%);
+  }
+
+  .live-foot {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-3xs) var(--space-s);
+    padding: var(--space-xs) var(--space-s);
+    font-family: var(--font-mono);
+    font-size: var(--step--2);
+    color: var(--muted);
+  }
+  .live-nojs {
+    display: none;
+    padding: 0 var(--space-s) var(--space-s);
+    font-size: var(--step--1);
+    color: var(--ink-2);
+  }
+  :global(html:not(.js)) .live-nojs {
+    display: block;
+  }
+
+  /* =================== flujos =================== */
+  .flows {
+    display: grid;
+    gap: var(--space-l);
+    min-width: 0;
+  }
+  .flow {
+    container-type: inline-size;
+    margin: 0;
+    min-width: 0;
+  }
+  .flow-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3xs) var(--space-m);
+    margin-bottom: var(--space-s);
+  }
+  .flow-t {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-family: var(--font-display);
+    font-size: var(--step-1);
+    font-stretch: 87.5%;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+  }
+  .flow-i {
+    display: inline-grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--line-strong);
+    font-size: var(--step--2);
+    letter-spacing: 0;
+    color: var(--volt-ink);
+  }
+  .flow-lead {
+    font-family: var(--font-mono);
+    font-size: var(--step--2);
+    color: var(--muted);
+  }
+
+  /* ---- etapas: vertical por defecto (teléfono), horizontal si el contenedor da ---- */
+  .stages {
+    --packet: var(--fx-hot);
+    --wire-len: 26px;
+    --cycle: 4.2s;
+    --hop: 0.6s;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .stage {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-xs);
+    min-height: 56px;
+    padding: var(--space-xs) var(--space-s);
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition:
+      border-color var(--dur-1) var(--ease-out),
+      background-color var(--dur-1) var(--ease-out),
+      translate var(--dur-2) var(--ease-out);
+  }
+  .stage:hover {
+    border-color: var(--line-strong);
+    background: var(--surface-2);
+  }
+  .stage[aria-pressed='true'] {
+    border-color: var(--volt-ink);
+    background: color-mix(in srgb, var(--volt-soft) 100%, var(--surface));
+  }
+  .stage-n {
+    font-family: var(--font-mono);
+    font-size: var(--step--2);
+    color: var(--muted);
+  }
+  .stage[aria-pressed='true'] .stage-n {
+    color: var(--volt-ink);
+  }
+  .stage-t {
+    font-family: var(--font-display);
+    font-size: var(--step--1);
+    font-stretch: 87.5%;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+  }
+  .stage-m {
+    font-family: var(--font-mono);
+    font-size: var(--step--2);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  /* LED de la etapa: se enciende cuando llega el paquete. */
+  .stage-led {
+    position: absolute;
+    top: -1px;
+    right: -1px;
+    width: 6px;
+    height: 6px;
+    background: var(--packet);
+    opacity: 0.18;
+  }
+  /* Destello del ping real (lo anima system.ts con la Web Animations API, solo opacidad). */
+  .stage-ping {
+    position: absolute;
+    inset: -1px;
+    border: 1px solid var(--ion);
+    box-shadow: 0 0 0 3px var(--ion-soft);
     opacity: 0;
-    animation: packet 3.2s linear infinite;
-    z-index: 1;
+    pointer-events: none;
   }
-  .js .zone:not(:last-child)::before {
-    top: calc(50% + 6px);
-    right: -13px;
+
+  .wire {
+    position: relative;
+    display: block;
+    height: var(--wire-len);
+    margin-left: calc(var(--space-s) + 0.6em);
+    width: 7px;
+  }
+  .wire::before {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--line-strong);
+  }
+  .wire i {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 7px;
+    height: 7px;
+    background: var(--packet);
+    box-shadow: 0 0 8px var(--packet);
+    opacity: 0;
+    --travel: translateY(calc(var(--wire-len) - 7px));
+  }
+
+  @container (min-width: 520px) {
+    .stages--4 {
+      grid-template-columns: minmax(0, 1fr) repeat(3, var(--wire-len) minmax(0, 1fr));
+    }
+    .stages--5 {
+      grid-template-columns: minmax(0, 1fr) repeat(4, var(--wire-len) minmax(0, 1fr));
+    }
+    .stage {
+      grid-template-columns: minmax(0, 1fr);
+      align-content: start;
+      gap: var(--space-3xs);
+      min-height: 104px;
+      padding: var(--space-xs);
+    }
+    .stage-n {
+      margin-bottom: var(--space-2xs);
+    }
+    .stage-m {
+      white-space: normal;
+    }
+    .wire {
+      align-self: center;
+      width: auto;
+      height: 7px;
+      margin: 0;
+    }
+    .wire::before {
+      left: 0;
+      right: 0;
+      top: 3px;
+      bottom: auto;
+      width: auto;
+      height: 1px;
+    }
+    .wire i {
+      --travel: translateX(calc(var(--wire-len) - 7px));
+    }
+  }
+
+  /* Un paquete recorre el camino etapa por etapa, en bucle. Solo transform/opacity. */
+  :global(.js) .wire i {
+    animation: packet var(--cycle) linear infinite;
+  }
+  :global(.js) .stage-led {
+    animation: arrive var(--cycle) linear infinite;
+  }
+  .stage:nth-of-type(2) .stage-led {
+    animation-delay: calc(var(--hop) * 1);
+  }
+  .stage:nth-of-type(3) .stage-led {
+    animation-delay: calc(var(--hop) * 2);
+  }
+  .stage:nth-of-type(4) .stage-led {
+    animation-delay: calc(var(--hop) * 3);
+  }
+  .stage:nth-of-type(5) .stage-led {
+    animation-delay: calc(var(--hop) * 4);
+  }
+  .wire:nth-of-type(1) i {
+    animation-delay: calc(var(--hop) * 0 + 0.12s);
+  }
+  .wire:nth-of-type(2) i {
+    animation-delay: calc(var(--hop) * 1 + 0.12s);
+  }
+  .wire:nth-of-type(3) i {
+    animation-delay: calc(var(--hop) * 2 + 0.12s);
+  }
+  .wire:nth-of-type(4) i {
+    animation-delay: calc(var(--hop) * 3 + 0.12s);
   }
   @keyframes packet {
     0% {
       opacity: 0;
-      transform: translateX(0);
+      transform: none;
     }
-    10%,
-    30% {
+    1.5% {
       opacity: 1;
     }
-    40%,
+    10% {
+      opacity: 1;
+      transform: var(--travel);
+    }
+    12%,
     100% {
       opacity: 0;
-      transform: translateX(18px);
+      transform: var(--travel);
     }
   }
-  .lane-deploy {
-    position: relative;
-    margin-top: 12px;
-    padding: 28px 12px 12px;
-    border: 1px dashed var(--line);
-    border-radius: var(--radius);
+  @keyframes arrive {
+    0%,
+    100% {
+      opacity: 0.18;
+    }
+    2% {
+      opacity: 1;
+    }
+    18% {
+      opacity: 0.18;
+    }
   }
-  .lane-deploy .zone-nodes {
-    flex: 1;
-    align-items: stretch;
+  .flow:not(.is-visible) .wire i,
+  .flow:not(.is-visible) .stage-led {
+    animation-play-state: paused;
   }
-  .node-quiet {
-    background: transparent;
-  }
-  .node-end {
-    align-self: center;
-    font-size: 12px;
+
+  /* ---- ping real ---- */
+  .ping {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2xs);
+    margin-top: var(--space-xs);
+    font-family: var(--font-mono);
+    font-size: var(--step--2);
     color: var(--muted);
-    white-space: nowrap;
   }
-  .detail {
-    margin-top: 12px;
-    min-height: 88px;
-    padding: 16px 18px;
+  .ping b {
+    font-weight: 500;
+    color: var(--ion-ink);
+  }
+
+  /* ---- lectura de la etapa elegida ---- */
+  .readout {
+    position: relative;
+    display: grid;
+    gap: var(--space-s);
+    margin-top: var(--space-xs);
+    padding: var(--space-s) var(--space-s) var(--space-s) calc(var(--space-s) + 2px);
     border: 1px solid var(--line);
-    border-left: 2px solid var(--accent);
-    border-radius: var(--radius);
     background: var(--surface);
   }
-  .detail-t {
-    font-size: 12px;
+  .readout::before {
+    content: '';
+    position: absolute;
+    left: -1px;
+    top: -1px;
+    bottom: -1px;
+    width: 2px;
+    background: var(--volt-ink);
+  }
+  :global(.js) .readout {
+    min-height: 6.5em;
+  }
+  :global(.js) .readout-item:not(.is-on) {
+    display: none;
+  }
+  :global(.js) .readout-item.is-on {
+    animation: readout-in var(--dur-3) var(--ease-out);
+  }
+  @keyframes readout-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+  .readout-k {
+    font-family: var(--font-display);
+    font-size: var(--step--2);
+    font-stretch: 87.5%;
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
     color: var(--muted);
   }
-  .detail-t span {
-    color: var(--accent);
+  .readout-k span {
+    color: var(--volt-ink);
   }
-  .detail-d {
-    margin-top: 8px;
-    max-width: 72ch;
+  .readout-d {
+    margin-top: var(--space-3xs);
+    max-width: var(--w-text);
     color: var(--ink-2);
   }
-  @media (max-width: 860px) {
-    .lane {
-      flex-direction: column;
+
+  /* =================== caja de herramientas =================== */
+  .toolbox {
+    display: grid;
+    gap: var(--space-xs);
+    margin-top: var(--space-xl);
+    padding-top: var(--space-m);
+    border-top: 1px solid var(--line);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js) .wire i,
+    :global(.js) .stage-led,
+    .metric[data-idle] .spark-scan,
+    :global(.js) .readout-item.is-on {
+      animation: none;
     }
-    .zone-nodes {
-      flex-direction: column;
-      gap: 14px;
+    .wire i {
+      opacity: 0;
     }
-    .zone-nodes > .node:not(:last-child)::after {
-      top: auto;
-      bottom: -15px;
-      right: auto;
-      left: 24px;
-      width: 1px;
-      height: 14px;
+    .stage-led {
+      opacity: 0.4;
     }
-    .zone:not(:last-child)::after {
-      top: auto;
-      bottom: -13px;
-      right: auto;
-      left: 36px;
-      width: 1px;
-      height: 12px;
-    }
-    .js .zone-nodes > .node:not(:last-child)::before,
-    .js .zone:not(:last-child)::before {
+    .metric[data-idle] .spark-scan {
       display: none;
     }
-    .node-end {
-      align-self: flex-start;
+    .gauge span {
+      transition: none;
     }
   }
 </style>
