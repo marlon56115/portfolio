@@ -26,17 +26,11 @@ const shotsFor = (prefix: string) =>
 
 const prefix = { money: 'money', tickets: 'tickets' } as const;
 
-const tree = [
-  ['ansible/', lang === 'es' ? 'SO, discos, k3s, NAS' : 'OS, disks, k3s, NAS'],
-  ['autoinstall/', 'cloud-init'],
-  ['tofu/', lang === 'es' ? 'túnel, DNS, Access' : 'tunnel, DNS, Access'],
-  ['k8s/', lang === 'es' ? 'GitOps con Flux' : 'GitOps with Flux'],
-  ['  infra/', 'cnpg · garage · monitoring'],
-  ['  apps/', lang === 'es' ? 'una carpeta por app' : 'one folder per app'],
-  ['secrets/', 'sops + age'],
-  ['docs/adr/', '34 ADR'],
-  ['.github/workflows/', 'plan · check · apply'],
-];
+// Plataforma propia: secuencia genérica "reproducible desde git" (sin detalles de infraestructura).
+const layers =
+  lang === 'es'
+    ? [['repositorio', 'una sola fuente de verdad'], ['aprovisionamiento', 'idempotente, de máquina limpia a base lista'], ['plataforma', 'GitOps: Git manda, el sistema converge'], ['aplicaciones', 'declaradas, con versiones fijadas'], ['datos', 'respaldos con restauración probada'], ['observabilidad', 'métricas, logs y alertas'], ['decisiones', '30+ ADRs documentados']]
+    : [['repository', 'a single source of truth'], ['provisioning', 'idempotent, clean machine to ready base'], ['platform', 'GitOps: Git leads, the system converges'], ['apps', 'declared, every version pinned'], ['data', 'backups with tested restores'], ['observability', 'metrics, logs and alerting'], ['decisions', '30+ documented ADRs']];
 ---
 
 <section class="section" id="projects">
@@ -46,9 +40,9 @@ const tree = [
     <div class="projects">
       {
         p.items.map((item, idx) => {
-          const imgs = item.slug === 'home-server' ? [] : shotsFor(prefix[item.slug]);
+          const imgs = item.slug === 'platform' ? [] : shotsFor(prefix[item.slug]);
           return (
-            <article class:list={['project', { featured: item.slug === 'home-server' }]} data-reveal>
+            <article class:list={['project', { featured: item.slug === 'platform' }]} data-reveal>
               <div class="p-copy">
                 <p class="p-kicker mono">
                   <span class="p-num">{String(idx + 1).padStart(2, '0')}</span>
@@ -56,7 +50,7 @@ const tree = [
                 </p>
                 <h3 class="p-name">
                   {item.name}
-                  {item.slug === 'home-server' && (
+                  {item.slug === 'platform' && (
                     <span class="here mono">
                       <span class="led is-pulse" /> {p.youAreHere}
                     </span>
@@ -81,30 +75,20 @@ const tree = [
               </div>
 
               <div class="p-visual">
-                {item.slug === 'home-server' ? (
-                  <div class="tree mono" aria-label="home-server/">
+                {item.slug === 'platform' ? (
+                  <div class="tree mono" aria-label={item.name}>
                     <p class="tree-head">
-                      <span class="dots" aria-hidden="true">
-                        <i />
-                        <i />
-                        <i />
-                      </span>
-                      ~/home-server <span class="branch">main</span>
-                    </p>
-                    <p class="tree-cmd">
-                      <span>$</span> tree -L 2 --dirsfirst
+                      <span class="dots" aria-hidden="true"><i /><i /><i /></span>
+                      {lang === 'es' ? 'reproducible desde git' : 'reproducible from git'} <span class="branch">main</span>
                     </p>
                     <ul>
-                      {tree.map(([dir, note]) => (
+                      {layers.map(([dir, note]) => (
                         <li>
-                          <span class="dir">{dir}</span>
+                          <span class="dir">✓ {dir}</span>
                           <span class="note"># {note}</span>
                         </li>
                       ))}
                     </ul>
-                    <p class="tree-cmd">
-                      <span>$</span> make bootstrap <span class="note"># {lang === 'es' ? 'servidor limpio → todo de vuelta' : 'clean server → everything back'}</span>
-                    </p>
                   </div>
                 ) : (
                   imgs.length > 0 && (
@@ -116,7 +100,7 @@ const tree = [
                             <i />
                             <i />
                           </span>
-                          <span class="url mono">{item.slug === 'money' ? 'money.mihomeserver.com' : 'control-de-vales'} · demo</span>
+                          <span class="url mono">{item.slug === 'money' ? 'gastos' : 'control-de-vales'} · {lang === 'es' ? 'datos de demostración' : 'demo data'}</span>
                         </p>
                         <div class="screens">
                           {imgs.map((img, i) => (
@@ -178,7 +162,7 @@ const tree = [
     letter-spacing: 0.06em;
   }
   .p-num {
-    color: var(--accent);
+    color: var(--volt-ink);
   }
   .p-name {
     display: flex;
@@ -224,7 +208,7 @@ const tree = [
     top: 0.72em;
     width: 7px;
     height: 1px;
-    background: var(--accent);
+    background: var(--volt-ink);
   }
   .p-status {
     margin-top: 18px;
@@ -243,7 +227,7 @@ const tree = [
     background: var(--term-bg);
     color: var(--term-ink);
     font-size: 13px;
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-1);
     overflow: hidden;
   }
   .tree-head,
@@ -283,7 +267,7 @@ const tree = [
   }
   .tree li {
     display: grid;
-    grid-template-columns: 19ch minmax(0, 1fr);
+    grid-template-columns: 22ch minmax(0, 1fr);
     gap: 12px;
     padding: 3px 0;
     white-space: pre;
@@ -302,7 +286,7 @@ const tree = [
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background: var(--surface);
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-1);
     overflow: hidden;
   }
   .browser-bar {
@@ -352,7 +336,7 @@ const tree = [
   .thumbs button:hover,
   .thumbs button[aria-pressed='true'] {
     opacity: 1;
-    border-color: var(--accent);
+    border-color: var(--volt-ink);
   }
   .thumbs :global(img) {
     width: 100%;

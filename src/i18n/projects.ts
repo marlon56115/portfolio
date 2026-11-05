@@ -4,7 +4,7 @@
 
 export interface Project {
   // Identificador interno estable (lo usa Projects.astro); no se muestra.
-  slug: 'home-server' | 'money' | 'tickets';
+  slug: 'platform' | 'money' | 'tickets';
   name: string;
   kicker: string;
   summary: string;
@@ -23,7 +23,7 @@ const es = {
     private: 'código privado',
     items: [
       {
-        slug: 'home-server',
+        slug: 'platform',
         name: 'Plataforma propia',
         kicker: 'Infraestructura como código',
         summary:
@@ -83,7 +83,7 @@ const en: Projects = {
     private: 'private source',
     items: [
       {
-        slug: 'home-server',
+        slug: 'platform',
         name: 'Own platform',
         kicker: 'Infrastructure as code',
         summary:

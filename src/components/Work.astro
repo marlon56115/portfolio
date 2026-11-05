@@ -32,15 +32,9 @@ const range = (from: string, to: string | null) => formatRange(from, to, lang, w
                 <summary>
                   <span class="line1 mono">
                     <span class="hash">{j.id}</span>
-                    {j.tag && (
+                    {i === 0 && (
                       <span class="ref">
-                        {j.tag === 'HEAD' ? (
-                          <>
-                            <b>HEAD</b> → main
-                          </>
-                        ) : (
-                          <>tag: {j.tag}</>
-                        )}
+                        <b>HEAD</b> → main
                       </span>
                     )}
                     <span class="date">{range(j.from, j.to)}</span>
@@ -60,8 +54,8 @@ const range = (from: string, to: string | null) => formatRange(from, to, lang, w
                   </span>
                   <span class="summary">{j.summary}</span>
                   <span class="toggle mono" data-js-only>
-                    <span class="t-show">{w.show}</span>
-                    <span class="t-hide">{w.hide}</span>
+                    
+                    <span>{w.pointsLabel}</span>
                   </span>
                 </summary>
                 <div class="more">
@@ -102,7 +96,7 @@ const range = (from: string, to: string | null) => formatRange(from, to, lang, w
     margin-bottom: 18px;
   }
   .cmd span {
-    color: var(--accent);
+    color: var(--volt-ink);
   }
   .commits {
     list-style: none;
@@ -143,9 +137,9 @@ const range = (from: string, to: string | null) => formatRange(from, to, lang, w
     background: var(--bg);
   }
   .dot.head {
-    border-color: var(--accent);
-    background: var(--accent);
-    box-shadow: 0 0 0 4px var(--accent-soft);
+    border-color: var(--volt-ink);
+    background: var(--volt-ink);
+    box-shadow: 0 0 0 4px var(--volt-soft);
   }
   .body {
     padding-bottom: 28px;
@@ -174,7 +168,7 @@ const range = (from: string, to: string | null) => formatRange(from, to, lang, w
   }
   .ref b {
     font-weight: 500;
-    color: var(--accent-ink);
+    color: var(--volt-ink);
   }
   .date {
     color: var(--muted);
@@ -212,7 +206,7 @@ const range = (from: string, to: string | null) => formatRange(from, to, lang, w
   }
   .toggle::before {
     content: '+ ';
-    color: var(--accent);
+    color: var(--volt-ink);
   }
   details[open] .toggle::before {
     content: '− ';
@@ -225,7 +219,7 @@ const range = (from: string, to: string | null) => formatRange(from, to, lang, w
     display: inline;
   }
   summary:hover .company {
-    color: var(--accent-ink);
+    color: var(--volt-ink);
   }
   .more {
     margin-top: 14px;
