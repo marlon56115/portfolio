@@ -1,0 +1,247 @@
+---
+// Retrato del hero: recorte (Vision) sobre un panel con rejilla de puntos y marcas de registro.
+// Dos capas: la foto natural y un semitono a 45° (máscara alfa coloreada con los tokens).
+// Al cargar: "bloqueo de señal" (el semitono se resuelve en la foto con un barrido).
+// Con ratón: una sonda circular muestra el semitono bajo el puntero. Botón: alterna natural / señal.
+// Recorte y semitonos: scripts/hero-photo/ (ver README del script).
+import { Picture } from 'astro:assets';
+import cutout from '../../assets/hero/marlon-cutout.webp';
+import type { Lang } from '../../i18n';
+import { dict } from '../../i18n';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = dict[lang].hero;
+---
+
+<figure class="portrait" data-portrait data-cursor="none">
+  <div class="portrait__stage" data-portrait-stage>
+    <div class="portrait__panel reg" aria-hidden="true"></div>
+    <div class="portrait__photo">
+      <Picture
+        src={cutout}
+        alt={t.photoAlt}
+        widths={[280, 420, 640, 840, 1100]}
+        sizes="(min-width: 1024px) 440px, (min-width: 768px) 300px, 46vw"
+        formats={['avif', 'webp']}
+        fallbackFormat="webp"
+        quality={72}
+        loading="eager"
+        fetchpriority="high"
+        data-portrait-img
+      />
+    </div>
+    <div class="portrait__lens" aria-hidden="true"><div class="portrait__dots"></div></div>
+    <span class="portrait__scan" aria-hidden="true"></span>
+    <span class="portrait__probe" aria-hidden="true"></span>
+  </div>
+  <figcaption class="portrait__cap">
+    <span>{t.figure}</span>
+    <button class="portrait__toggle" type="button" data-portrait-toggle data-js-only aria-pressed="false" aria-label={t.photoView}>
+      <span class="is-n">{t.photoNatural}</span><span aria-hidden="true">/</span><span class="is-s">{t.photoSignal}</span>
+    </button>
+  </figcaption>
+</figure>
+
+<style>
+  .portrait {
+    --lx: 50%;
+    --ly: 40%;
+    --lr: 0px;
+    margin: 0;
+    min-width: 0;
+  }
+  .portrait__stage {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+  }
+  /* Panel: empieza bajo la coronilla para que la cabeza "salga" del marco. */
+  .portrait__panel {
+    --reg: var(--volt-ink);
+    --reg-len: 12px;
+    position: absolute;
+    inset: 24% 0 0;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .portrait__panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 70% at 50% 35%, color-mix(in srgb, var(--ion) 14%, transparent), transparent 70%),
+      radial-gradient(var(--fx-mark) 1px, transparent 1.3px) 0 0 / 12px 12px;
+  }
+  .portrait__photo,
+  .portrait__lens,
+  .portrait__dots {
+    position: absolute;
+    inset: 0;
+  }
+  .portrait__photo :global(picture) {
+    display: block;
+    height: 100%;
+  }
+  .portrait__photo :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 0 1px color-mix(in srgb, var(--ink) 25%, transparent));
+  }
+  .portrait__dots {
+    background: linear-gradient(170deg, var(--ion) 10%, var(--volt-ink) 95%);
+    mask: url('../../assets/hero/marlon-dots-bright.webp') center / 100% 100% no-repeat;
+  }
+  :global(html[data-theme='light']) .portrait__dots {
+    background: linear-gradient(170deg, var(--ion-ink) 10%, var(--volt-ink) 95%);
+    mask-image: url('../../assets/hero/marlon-dots-dark.webp');
+  }
+  @media (prefers-color-scheme: light) {
+    :global(html:not([data-theme])) .portrait__dots {
+      background: linear-gradient(170deg, var(--ion-ink) 10%, var(--volt-ink) 95%);
+      mask-image: url('../../assets/hero/marlon-dots-dark.webp');
+    }
+  }
+  .portrait__lens {
+    opacity: 0;
+    transition: opacity var(--dur-3) var(--ease-out);
+  }
+  .portrait__photo {
+    transition: opacity var(--dur-3) var(--ease-out);
+  }
+
+  /* vista "señal" completa */
+  .portrait.is-signal .portrait__lens {
+    opacity: 1;
+  }
+  .portrait.is-signal .portrait__photo {
+    opacity: 0;
+  }
+
+  /* sonda bajo el puntero */
+  .portrait.is-probing:not(.is-signal) .portrait__lens {
+    opacity: 1;
+    mask: radial-gradient(circle var(--lr) at var(--lx) var(--ly), #000 calc(100% - 1px), transparent);
+  }
+  .portrait.is-probing:not(.is-signal) .portrait__photo {
+    mask: radial-gradient(circle var(--lr) at var(--lx) var(--ly), transparent calc(100% - 1px), #000);
+  }
+  .portrait__probe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: calc(var(--lr) * 2);
+    height: calc(var(--lr) * 2);
+    border: 1px solid var(--volt-ink);
+    border-radius: 50%;
+    opacity: 0;
+    pointer-events: none;
+    translate: calc(var(--lx) - var(--lr)) calc(var(--ly) - var(--lr));
+    background:
+      linear-gradient(var(--volt-ink), var(--volt-ink)) center / 9px 1px no-repeat,
+      linear-gradient(var(--volt-ink), var(--volt-ink)) center / 1px 9px no-repeat;
+    transition: opacity var(--dur-2) var(--ease-out);
+  }
+  .portrait.is-probing:not(.is-signal) .portrait__probe {
+    opacity: 1;
+  }
+
+  /* bloqueo de señal al cargar */
+  .portrait__scan {
+    position: absolute;
+    inset: 0;
+    border-bottom: 2px solid var(--volt-ink);
+    background: linear-gradient(to bottom, transparent 70%, color-mix(in srgb, var(--volt) 18%, transparent));
+    translate: 0 -101%;
+    pointer-events: none;
+  }
+  .portrait.is-scanning .portrait__lens {
+    opacity: 1;
+    animation: lock-dots 2s var(--ease-out) both;
+  }
+  .portrait.is-scanning .portrait__photo {
+    animation: lock-photo 1.4s var(--ease-in-out) 0.25s both;
+  }
+  .portrait.is-scanning .portrait__scan {
+    animation: lock-scan 1.4s var(--ease-in-out) 0.25s both;
+  }
+  @keyframes lock-photo {
+    from {
+      clip-path: inset(0 0 100% 0);
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+  @keyframes lock-scan {
+    0% {
+      translate: 0 -101%;
+      opacity: 1;
+    }
+    85% {
+      translate: 0 0;
+      opacity: 1;
+    }
+    100% {
+      translate: 0 0;
+      opacity: 0;
+    }
+  }
+  @keyframes lock-dots {
+    0%,
+    75% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  .portrait__cap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .portrait__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 2px 0 8px;
+    border: 0;
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    cursor: pointer;
+  }
+  .portrait__toggle .is-n,
+  .portrait__toggle[aria-pressed='true'] .is-s {
+    color: var(--volt-ink);
+  }
+  .portrait__toggle[aria-pressed='true'] .is-n {
+    color: var(--muted);
+  }
+  @media (pointer: fine) {
+    .portrait__toggle {
+      min-height: 28px;
+    }
+  }
+  @media (max-width: 767.98px) {
+    .portrait__cap > span:first-child {
+      display: none;
+    }
+    .portrait__cap {
+      justify-content: flex-end;
+      margin-top: 0;
+    }
+  }
+</style>
