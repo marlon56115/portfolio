@@ -3,13 +3,16 @@
 
 import { pageLang, safe } from '../lib/dom';
 import { hydrateSince } from '../lib/time';
-import { applyTheme, initTheme } from './core/theme';
+import { applyTheme, currentTheme, initTheme } from './core/theme';
 import { initNav, rememberLang } from './core/nav';
 import { initMenu } from './core/menu';
 import { initReveal } from './core/reveal';
 import { initBackground } from './fx/background';
 import { initCursor } from './fx/cursor';
 import { initScramble } from './fx/scramble';
+import { initDecode } from './fx/decode';
+import { initSpotlight } from './fx/spotlight';
+import { initThemeWipe } from './fx/theme-wipe';
 import { initHero } from './sections/hero';
 import { initSystem } from './sections/system';
 import { initWork } from './sections/work';
@@ -27,6 +30,9 @@ safe('scramble', () => initScramble());
 safe('reveal', initReveal);
 safe('background', initBackground);
 safe('cursor', initCursor);
+safe('decode', initDecode);
+safe('spotlight', initSpotlight);
+safe('theme-wipe', () => initThemeWipe({ applyTheme, currentTheme }));
 safe('hero', initHero);
 safe('work', initWork);
 safe('projects', initProjects);
