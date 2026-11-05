@@ -1,14 +1,13 @@
 // Contacto: copiar el correo, hora local en vivo, foco de luz en las tarjetas y el borrador mailto:.
 // Nada de innerHTML: solo textContent y atributos.
 
-import { $, $$, finePointer, pageLang, reducedMotion } from '../../lib/dom';
+import { $, $$, pageLang, reducedMotion } from '../../lib/dom';
 
 export function initContact(): void {
   const root = $('[data-contact]');
   if (!root) return;
   initCopy(root);
   initClock(root);
-  initSpotlight(root);
   initCompose(root);
 }
 
@@ -173,24 +172,6 @@ function initClock(root: HTMLElement): void {
   });
   render();
   schedule();
-}
-
-// ---------- foco de luz en las tarjetas ----------
-
-function initSpotlight(root: HTMLElement): void {
-  if (!finePointer.matches) return;
-  $$('[data-spot]', root).forEach((card) => {
-    card.addEventListener('pointermove', (e) => {
-      if (e.pointerType !== 'mouse' || reducedMotion.matches) return;
-      const r = card.getBoundingClientRect();
-      card.style.setProperty('--px', `${(e.clientX - r.left).toFixed(0)}px`);
-      card.style.setProperty('--py', `${(e.clientY - r.top).toFixed(0)}px`);
-    });
-    card.addEventListener('pointerleave', () => {
-      card.style.setProperty('--px', '50%');
-      card.style.setProperty('--py', '50%');
-    });
-  });
 }
 
 // ---------- borrador → mailto: ----------

@@ -39,7 +39,8 @@ interface Data {
 }
 interface Ctx {
   lang: Lang;
-  applyTheme: (t: 'light' | 'dark', persist: boolean) => void;
+  /** Cambia el tema con el mismo barrido que el botón (fx/theme-wipe.ts), desde `origin`. */
+  setTheme: (t: 'light' | 'dark', persist: boolean, origin?: Element | null) => void;
   rememberLang: (l: Lang) => void;
 }
 // Contrato nuevo de /api/status (todo opcional). Solo se leen estos campos.
@@ -218,7 +219,7 @@ export function initTerminal(ctx: Ctx): void {
     },
     theme: (a) => {
       const v = a[0] === 'light' || a[0] === 'dark' ? a[0] : document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-      ctx.applyTheme(v, true);
+      ctx.setTheme(v, true, input);
       print([dim(s.themeSet), ' ', acc(v)]);
     },
     lang: (a) => {
